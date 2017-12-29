@@ -1,0 +1,27 @@
+html {
+	background-image: url("/Users/Natalie DellaMaria/Pictures/Neature/boots-background.JPG");
+	height: 100%
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+
+h1 {
+	color: white;
+	font-family: 'Tangerine', 'cursive';
+	text-align: center;
+	font-size: 80pt;
+	margin-bottom: 0;
+	margin-top: 25px;
+}
+
+.navigation {
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: center;
+	color: white;
+	font-size: 15pt;
+	list-style-type: none;
+	margin: 0;
+	padding-top: 0;
+}
+

@@ -1,0 +1,42 @@
+html {
+	background-image: url("/Users/Natalie DellaMaria/Pictures/website photos/portugal sunset 3 (2).JPG");
+	height: 100%
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+
+.textbox {
+	background-color: white;
+	opacity: 0.5;
+	display: flex;
+	margin: 30px;
+	width: 625px;
+	height: 500px;
+	display: flex;
+	flex-direction: column;
+}
+
+.textbox h1 {
+	color: black;
+	font-family: 'Tangerine', 'cursive';
+	font-size: 40pt;
+	align-self: center;
+	margin-bottom: 0;
+
+}
+
+.navigation {
+	align-self: center;
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: center;
+	color: black;
+	font-size: 12pt;
+	list-style-type: none;
+	margin: 0;
+	padding-top: 0;
+}
+
+.textbox p {
+
+}
