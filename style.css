@@ -156,7 +156,7 @@ h2 {
 	margin: 0;
 }
 
-.projects {
+.photos {
 	display: flex;
 	flex-direction: column;
 	align-content: flex-start;
@@ -166,7 +166,7 @@ h2 {
 	background: linear-gradient(#d3c3fa, rgb(22, 22, 63));
 }
 
-.projectsContent {
+.photosContent {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
