@@ -6,7 +6,7 @@
 }
 
 .slide {
-	background-image: url("/pictures/stars2.JPG");
+	background-image: url("./pictures/stars2.JPG");
 	background-repeat: no-repeat;
 	background-size: auto;
 	display: flex;
