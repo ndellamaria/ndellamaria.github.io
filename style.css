@@ -123,6 +123,7 @@ h2 {
 	font-family: 'Roboto Slab';
 	font-size: 30pt;
 	padding: 0;
+	flex-grow: 1;
 }
 
 .aboutMe {
@@ -136,20 +137,24 @@ h2 {
 }
 
 .aboutMeContent {
+	margin-top: 0;
 	display: flex;
 	flex-direction: row;
 	align-content: flex-start;
 	justify-content: space-around;
 	width: 100%;
+	flex-grow: 2;
 }
 
 .aboutMeContent img {
+	margin-top: 0;
 	width: 20vw;
 	height: 55vh;
 	margin: 0;
 }
 
 .aboutMeContent p {
+	margin-top: 0;
 	color: white;
 	width: 27vw;
 	height: 32vh;
@@ -173,7 +178,8 @@ h2 {
 	align-content: flex-start;
 	justify-content: space-around;
 	width: 100%;
-	height: 100%;	
+	height: 100%;
+	flex-grow: 2;	
 }
 
 .photos {
@@ -193,7 +199,8 @@ h2 {
 	align-content: flex-start;
 	justify-content: space-around;
 	width: 100%;
-	height: 100%;	
+	height: 100%;
+	flex-grow: 2;	
 }
 
 .imageContainer {
@@ -244,19 +251,30 @@ h2 {
 .contact {
 	display: flex;
 	flex-direction: column;
-	align-content: center;
-	justify-content: flex-start;
+	align-content: flex-start;
+	justify-content: center;
 	width: 100%;
 	height: 100%;
 	background: linear-gradient(#d3c3fa, rgb(22, 22, 63));
 }
 
+.contactContent {
+	flex-grow: 2;
+	display: flex;
+	flex-direction: column;
+	align-content: flex-start;
+	justify-content: flex-start;
+	width: 100%;
+	height: 100%;
+	flex-grow: 2;
+	margin: 0;
+}
 
 .contact .email p {
 	font-size: 20pt;
 	color: white;
-	align-self: center;
 	text-align: center;
+	margin-top: 0;
 }
 
 .contact .media {
