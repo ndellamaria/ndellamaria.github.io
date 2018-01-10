@@ -199,7 +199,8 @@ h2 {
 .imageContainer {
 	position: relative;
 	height: 20vh;
-	width: 20vw;
+	width: 17vw;
+	margin: 20px;
 }
 
 .image {
@@ -287,12 +288,13 @@ h2 {
 }
 
 .contact .overlayImgContact {
-	top: 15%;
-	left: 14%;
+	top: 14%;
+	left: 13%;
 	position: absolute;
 	height: 100%;
 	width: 100%;
 	border-radius: 50%;
+	vertical-align: middle;
 	opacity: 0;
 	transition: .5s ease;
 	background-color: rgba(255, 255, 255, .5);
