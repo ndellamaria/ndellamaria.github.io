@@ -1,0 +1,87 @@
+html {
+	background-image: url("/Users/Natalie DellaMaria/Pictures/Neature/canada sunset1.jpg");
+	height: 100vh;
+	width: 100vw;
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+
+
+
+.textbox {
+	background-color: rgba(255, 255, 255, .5);
+	display: flex;
+	margin: 30px;
+	width: 40vw;
+	height: 60vh;
+	display: flex;
+	flex-direction: column;
+}
+
+.textbox h1 {
+	color: black;
+	font-family: 'Roboto Slab';
+	font-size: 40pt;
+	align-self: center;
+	margin-bottom: 0;
+
+}
+
+.navigation {
+	align-self: center;
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: center;
+	color: black;
+	font-size: 12pt;
+	list-style-type: none;
+	margin: 0;
+	padding-top: 0;
+}
+
+
+
+.title p {
+}
+
+.images {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-around;
+	height: 40%;
+	width: 100%;
+}
+
+.imageContainer {
+	position: relative;
+	height: 12%;
+	width: 16%;
+}
+
+.image {
+	height: 100%;
+	width: 100%;
+	border-color: grey;
+	border: 2px;
+}
+
+.overlay {
+	top: 0;
+	left: 0;
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	opacity: 0;
+	transition: .5s ease;
+	background-color: rgba(255, 255, 255, .5);
+}
+
+.overlay:hover {
+	opacity: 1;
+}
+
+.text {
+	font-size: 20pt;
+	font-weight: bold;
+	text-align: center;
+}
