@@ -45,6 +45,8 @@
 	align-self: center;
 	color: white;
 	font-family: 'Roboto Slab';
+	font-size: 45pt;
+	font-weight: bold;
 }
 
 .slide p {
@@ -57,6 +59,7 @@
 	flex-direction: row;
 	width: 100vw;
 	height: 8vh;
+	z-index: 100;
 }
 
 .navigationBar a {
@@ -107,6 +110,10 @@
 
 }
 
+.sticky + .pageContent {
+	padding-top: 60px;
+}
+
 .content {
 	display: flex;
 	flex-direction: column;
@@ -116,6 +123,7 @@
 }
 
 h2 {
+	margin-top: 60px;
 	align-self: center;
 	color: white;
 	font-family: 'Roboto Slab';
@@ -137,7 +145,7 @@ h2 {
 .aboutMeContent {
 	margin-top: 0;
 	display: flex;
-	flex-direction: row;
+	flex-direction: column;
 	align-content: flex-start;
 	justify-content: space-around;
 	width: 100%;
@@ -152,7 +160,21 @@ h2 {
 	margin: 0;
 }
 
-.aboutMeContent p {
+.aboutMeContent .textbox {
+	display: flex;
+	flex-direction: row;
+	width: 90vw;
+	height: 20vh;
+	background-color: rgba(255, 255, 255, .25);
+}
+
+.textbox .head {
+	background-color: rgba(255, 255, 255, .5);
+	width: 30%;
+	height: 100%;
+}
+
+.textbox p {
 	margin-top: 0;
 	color: white;
 	width: 27vw;
