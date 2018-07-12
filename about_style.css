@@ -6,7 +6,7 @@ body {
 	margin: 0;
 	padding: 0;
 	overflow: hidden;
-	background-color: #CAC5E7;
+	background-color:  #f2f2f2;
 }
 
 .header {
@@ -65,7 +65,7 @@ body {
 .content {
 	height: 75vh;
 	width: 100vw;
-	background-color: #ffffff;
+	background-color:  #f2f2f2;
 	position: relative;
 	display: flex;
 	flex-direction: row;
