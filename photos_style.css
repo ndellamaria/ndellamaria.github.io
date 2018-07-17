@@ -106,7 +106,7 @@ body {
 
 /* Create two equal columns that sits next to each other */
 .column {
-  width: 30vw;
+  width: 32vw;
   padding: 0 4px;
   display: flex;
   flex-direction: row;
@@ -118,5 +118,5 @@ body {
   margin-top: 3%;
   vertical-align: middle;
   height: auto;
-  width: 30vw;
+  width: 32vw;
 }

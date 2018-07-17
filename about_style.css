@@ -92,6 +92,10 @@ body {
 	font-family: 'ABeeZee', sans-serif;
 }
 
+.aboutP p {
+	font-family: 'Cardo', serif;
+}
+
 .resumeBubble {
 	width: 10vw;
 	height:10vw;
