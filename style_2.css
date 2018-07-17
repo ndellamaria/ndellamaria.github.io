@@ -118,6 +118,10 @@ img {
 	font-family: 'ABeeZee', sans-serif;
 }
 
+.homeP h2 {
+	font-family: 'Cardo', serif;
+}
+
 .homeP .bubbleContainer{
 	margin-top: 3%;
 	display: flex;

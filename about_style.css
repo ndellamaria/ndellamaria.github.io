@@ -51,7 +51,6 @@ body {
 	color: blue;
 	font-size: 13pt;
 	font-family: 'ABeeZee', sans-serif;
-
 }
 
 .separation {
@@ -94,6 +93,7 @@ body {
 
 .aboutP p {
 	font-family: 'Cardo', serif;
+	font-size: 13pt;
 }
 
 .resumeBubble {
