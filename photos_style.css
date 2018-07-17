@@ -114,12 +114,19 @@ body {
   margin-bottom: 5%;
 }
 
+.column .imgContainer{
+  margin-top: 3%;
+  vertical-align: middle;
+  height: auto;
+  width: 32vw;
+  position: relative;	
+}
+
 .column img {
   margin-top: 3%;
   vertical-align: middle;
   height: auto;
   width: 32vw;
-  position: relative;
 }
 
 .column .imgOverlay {
