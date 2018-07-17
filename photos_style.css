@@ -119,4 +119,21 @@ body {
   vertical-align: middle;
   height: auto;
   width: 32vw;
+  position: relative;
+}
+
+.column .imgOverlay {
+	position: absolute;
+	height: 30%;
+	width: 100%;
+	opacity: 0;
+	transition: .5s ease;
+	background-color: rgba(255, 255, 255, .5);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.imgContainer:hover .imgOverlay {
+	opacity: 1;
 }
