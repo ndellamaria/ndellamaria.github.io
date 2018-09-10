@@ -89,11 +89,13 @@ body {
 	color: #0B3B0B;
 	font-size: 30pt;
 	font-family: 'ABeeZee', sans-serif;
+	margin-bottom: 0;
 }
 
 .aboutP p {
 	font-family: 'Cardo', serif;
-	font-size: 12pt;
+	font-size: 11pt;
+	margin-top: 4pt;
 }
 
 .resumeBubble {
