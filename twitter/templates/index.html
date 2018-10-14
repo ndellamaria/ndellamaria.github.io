@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+
+<head>
+	<title>Hello World!</title>
+</head>
+
+<body>
+	<h1>CUhackit Hello World!</h1>
+	<h2>{{title}}</h2>
+	<ul>{% for t in mytweets %}
+		<li>
+			<p> 
+				{{t.text}}
+				<br>
+				<strong>@{{ t.user.screen_name}}</strong>
+			</p>
+		</li>
+		{% endfor %}
+	</ul>
+</body>
