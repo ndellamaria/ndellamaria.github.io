@@ -383,3 +383,47 @@ section {
   width: auto;
   margin: 2vh;
 }
+
+.resources {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background-color: #202020;
+  margin: 0;
+  flex-direction: column;
+}
+
+.resources h1 {
+  padding: 5vh;
+  color: white;
+  font-size: 20pt;
+  font-family: 'Catamaran', sans-serif;
+  margin-bottom: 0;
+}
+
+.resource-content {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: flex-start;
+}
+
+.resource-card {
+  display: flex;
+  text-align: center;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.resource-card h2 {
+  color: white;
+  font-size: 20pt;
+  align-self: center;
+  font-family: 'Catamaran', sans-serif;
+}
+
+.resource-card img {
+  width: 10vw;
+  height: auto;
+  margin: .5vw;
+}
