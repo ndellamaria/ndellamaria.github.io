@@ -427,3 +427,9 @@ section {
   height: auto;
   margin: .5vw;
 }
+footer {
+  color: white;
+  font-family: 'Catamaran', sans-serif;
+  text-align: center;
+  padding-top: 3vh;
+}
