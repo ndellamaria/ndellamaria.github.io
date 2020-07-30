@@ -3,6 +3,43 @@
 		<title>Natalie DellaMaria</title>
 		<link rel="stylesheet"  type="text/css" href="styles.css">
 		<link href="https://fonts.googleapis.com/css?family=ABeeZee|Cairo|Catamaran|Courgette" rel="stylesheet">
+		<meta charset="UTF-8">
+		<link rel="apple-touch-icon" type="image/png" href="https://static.codepen.io/assets/favicon/apple-touch-icon-5ae1a0698dcc2402e9712f7d01ed509a57814f994c660df9f7a952f3060705ee.png">
+		<meta name="apple-mobile-web-app-title" content="CodePen">
+		<link rel="shortcut icon" type="image/x-icon" href="https://static.codepen.io/assets/favicon/favicon-aec34940fbc1a6e787974dcd360f2c6b63348d4b1f4e06c77743096d55480f33.ico">
+		<link rel="mask-icon" type="" href="https://static.codepen.io/assets/favicon/logo-pin-8f3771b1072e3c38bd662872f6b673a722f4b3ca2421637d5596661b4e2132cc.svg" color="#111">
+		
+		<script>
+		  window.console = window.console || function(t) {};
+		</script>
+		<script>
+		  if (document.location.search.match(/type=embed/gi)) {
+		    window.parent.postMessage("resize", "*");
+		  }
+		</script>
+
+		<script>
+						// Instantiate the Bootstrap carousel
+			$('.multi-item-carousel').carousel({
+			  interval: false
+			});
+
+			// for every slide in carousel, copy the next slide's item in the slide.
+			// Do the same for the next, next item.
+			$('.multi-item-carousel .item').each(function(){
+			  var next = $(this).next();
+			  if (!next.length) {
+			    next = $(this).siblings(':first');
+			  }
+			  next.children(':first-child').clone().appendTo($(this));
+			  
+			  if (next.next().length>0) {
+			    next.next().children(':first-child').clone().appendTo($(this));
+			  } else {
+			  	$(this).siblings(':first').children(':first-child').clone().appendTo($(this));
+			  }
+			});
+		</script>
 	</head>
 
 	<body>
@@ -10,11 +47,11 @@
 
 			<div class="home">
 				<h1 class="name">Natalie DellaMaria</h1>
-				<p class="name-sub-desc">Software Engineer at Tesla</p>
+				<p class="name-sub-desc">Software Engineer at <span style="color:red;">Tesla</span></p>
 
-				<p class="about">In addition to my work as a software engineer, I am an avid reader, outdoor enthusiast, and advocate for underrepresented minorities in the technology industry. 
+				<p class="about">In addition to my work as a software engineer, I am an avid <a href="#library" style="color:white;">reader</a>, <a href="#outdoor" style="color:white;">outdoor enthusiast</a>, and advocate for underrepresented minorities in the technology industry. 
 
- 				If you are interested inlearning more about my experiences, gender inequality in the tech industry, or opportunities to mentor students in computer science, you can email me at <a href="mailto:nrdell3@gmail.com" style="color:white;">nrdell3@gmail.com</a> or reach out via the links below. 
+ 				If you are interested in learning more about my experiences, my views on gender inequality in the tech industry, or opportunities to mentor students in computer science, you can email me at <a href="mailto:nrdell3@gmail.com" style="color:white;">nrdell3@gmail.com</a> or reach out via the links below. 
 				</p>
 
 				<div class="media">
@@ -41,7 +78,199 @@
 				
 			</div>
 
+			<div class="library" id="library">
+				<div class="current">
+					<h1>Current Books</h1>
+						<div class="current-books">
+							<div class="book">
+								<a href="https://www.amazon.com/Beneath-Tamarind-Tree-Courage-Schoolgirls-ebook/dp/B072VGK4H1" target="_blank"><img src="https://m.media-amazon.com/images/I/51EPEie3JIL.jpg"></a>
+								<h3>Beneath the Tamarind Tree</h3>
+								<h4>Isha Sesay</h4>
+							</div>
+							<div class="book">
+								<a href="https://www.amazon.com/Good-Economics-Hard-Times-Problems/dp/154912885X/ref=asc_df_154912885X/?tag=hyprod-20&linkCode=df0&hvadid=385492364860&hvpos=&hvnetw=g&hvrand=10946980124013968037&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9021523&hvtargid=pla-842614590953&psc=1&tag=&ref=&adgrpid=79288121435&hvpone=&hvptwo=&hvadid=385492364860&hvpos=&hvnetw=g&hvrand=10946980124013968037&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9021523&hvtargid=pla-842614590953" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/41MwtflSI0L._SX332_BO1,204,203,200_.jpg"></a>
+								<h3>Good Economics for Hard Times</h3>
+								<h4>Abhijit V. Banerjee and Esther Duflo</h4>
+							</div>
+						</div>
+					</div>
+
+				<div class="prev">
+					<h1>Book Recommendations</h1>
+				
+					<div class="prev-books">
+						<div class="book-row">
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Enders-Ender-Quintet-Orson-Scott/dp/0812550706" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/en/e/e4/Ender%27s_game_cover_ISBN_0312932081.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Brotopia-Breaking-Boys-Silicon-Valley/dp/0735213534" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/8123KNmCz1L.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Shoe-Dog-Phil-Knight/dp/1508211809" target="_blank"><img src="https://m.media-amazon.com/images/I/41k+WVPLwZL.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Unbroken-World-Survival-Resilience-Redemption-ebook/dp/B003WUYPPG" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/91UmKFGfyYL.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Moment-Lift-Empowering-Women-Changes/dp/1250313570/ref=sr_1_1?dchild=1&keywords=moment+of+lift&qid=1596130255&s=books&sr=1-1" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/71LESEKiazL.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Three-Body-Problem-Cixin-Liu/dp/0765382032" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/51hshl7LRTL._SX329_BO1,204,203,200_.jpg"></a>
+							</div>
+						</div>
+						<div class="book-row">
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Just-Mercy-Bryan-Stevenson-audiobook/dp/B00O4D38GW/ref=sr_1_1?dchild=1&keywords=just+mercy+book&qid=1596130881&s=audible&sr=1-1" target="_blank"><img src="https://images-production.bookshop.org/spree/images/attachments/4143635/original/9780812984965.jpg?1589083069"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Catch-and-Kill-Ronan-Farrow-audiobook/dp/B07WTF24ZC/ref=sr_1_1?dchild=1&keywords=Catch+and+kill&qid=1596130713&s=audible&sr=1-1" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/81-ga+1ay2L.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/So-You-Want-to-Talk-About-Race-audiobook/dp/B078XKB7B3/ref=sr_1_1?crid=30JWO0LF3ZW9P&dchild=1&keywords=so+you+want+to+talk+about+race&qid=1596130671&s=audible&sprefix=so+you+wan%2Caudible%2C186&sr=1-1" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/61XfHzc+b6L.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Know-My-Name-Chanel-Miller-audiobook/dp/B07V9JTNBB/ref=sr_1_1?dchild=1&keywords=know+my+name&qid=1596130634&s=audible&sr=1-1" target="_blank"><img src="https://m.media-amazon.com/images/I/41onA2HFqWL.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Educated-Tara-Westover-audiobook/dp/B075F68BFV/ref=sr_1_1?dchild=1&keywords=Educated&qid=1596130599&s=audible&sr=1-1" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/81XR45UdqkL.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Deep-Work-Cal-Newport-audiobook/dp/B0189PVAWY/ref=sr_1_1?dchild=1&keywords=deep+work&qid=1596130569&s=books&sr=1-1" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/51kzUUHhMTL.jpg"></a>
+							</div>
+						</div>
+						<div class="book-row">
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Half-Sky-Oppression-Opportunity-Worldwide/dp/0307387097/ref=sr_1_1?dchild=1&keywords=half+the+sky&qid=1596130352&s=books&sr=1-1" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/51c55cQEnlL._SX323_BO1,204,203,200_.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Hard-Thing-About-Things-Building/dp/0062273205/ref=sr_1_1?dchild=1&keywords=the+hard+thing+about+hard+things&qid=1596130412&s=books&sr=1-1" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/51slqM2g3jL._SX329_BO1,204,203,200_.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Trick-Mirror-Jia-Tolentino-audiobook/dp/B07RHR61FL/ref=sr_1_1?dchild=1&keywords=trick+mirror&qid=1596130933&s=audible&sr=1-1" target="_blank"><img src="https://images-na.ssl-images-amazon.com/images/I/81M7D39GAWL.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/s?k=ameican+kingpin&i=audible&ref=nb_sb_noss_2"><img src="https://images-na.ssl-images-amazon.com/images/I/51iihnG5WbL._SX329_BO1,204,203,200_.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Hit-Refresh-audiobook/dp/B073ZL8T6V/ref=sr_1_1?dchild=1&keywords=Hit+refresh&qid=1596131047&s=audible&sr=1-1" target="_blank"><img src="https://m.media-amazon.com/images/I/518l2awqcnL.jpg"></a>
+							</div>
+							<div class="rec-book">
+								<a href="https://www.amazon.com/Small-Fry-Lisa-Brennan-Jobs-audiobook/dp/B07FM9NFHQ/ref=sr_1_1?dchild=1&keywords=small+fry&qid=1596131154&s=audible&sr=1-1"><img src="https://images-na.ssl-images-amazon.com/images/I/81liycPGOtL.jpg"></a>
+							</div>
+						</div>
+
+		  			</div>
+	  			</div>
+  			</div>
+
+
+		<section id="outdoor">
+		    <div class="container">
+		        <div class="carousel">
+		            <input type="radio" name="slides" checked="checked" id="slide-1">
+		            <input type="radio" name="slides" id="slide-2">
+		            <input type="radio" name="slides" id="slide-3">
+		            <input type="radio" name="slides" id="slide-4">
+		            <input type="radio" name="slides" id="slide-5">
+		            <input type="radio" name="slides" id="slide-6">
+		            <ul class="carousel__slides">
+		                <li class="carousel__slide">
+		                    <figure>
+		                        <div>
+		                            <img src="https://lh3.googleusercontent.com/7Mtutvkz3LOXUOpzYUtZ4_o4o-fnRAYFGhItQ3OYtSKZJSiBt35kEO1LOhJfrfR5e8Tt1HMCcaQIz_f_JbkxQtg3FuLNWUTR2d_fQHEHa9JFhz6HAuUagz4Kfax2xvarml60124Q1Y6l7GkSB_O8gXEQdMjgt-RUXKHnyJ7V6OFbmNVNaJmpfVznou9zDAQqLQWukgQFBYEC8wS7BD6sgs7GfZG1XzulI0bZ8bE3osz1fCJCBtHWGIGVIWwQP8zzz7VURI8IxHwEJ9EobTeL4tUcISnakLZQzaeID8OkTLTDqfWzMPpoUxCEU1w-N00HVv331S9K4Um1B3VKlxXHKjp7Gvm3eGIeHPHCEPgAlBYS6xIeX1JoX4I9ce4CFjSBQk-WkJQyNj2YPxAcoiGYD4Jx7cUcqeB3mPkW2vIpy8kP_aG9MU_CfgJdMski3NcDiGTztLbhn2AHlqCaAgkmlGU30hCECxga43Io08Eo5jzhr9f7WVPif-YDARLSpGQHFzReKMDwBWn0rt_s4BuibG-6vrdz_PCWPdtLwBIcPZlfOKJoqDyA8-ptuvWE8Bx9N_RVyWz16ItY_F0Oaf-xylmMoxPFvX4xsg88MRXyYa8N0wXHouG-SKM7ZmZTMiSbqGE6mDHNEOTrmsEPFWYSdJ1DpV3TNAlI7wZBrPi-60uMrAlJyaRIQOw6ZH3oZQ=w1600-h1200-no?authuser=0" alt="">
+		                        </div>
+
+		                        <figcaption>
+		                            Sunset on 14 Day Canoe Trip in Quetico Provincial Park, Canada
+		                            <span class="credit">Photo: Natalie DellaMaria</span>
+		                        </figcaption>
+		                    </figure>
+		                </li>
+		                <li class="carousel__slide">
+		                    <figure>
+		                        <div>
+		                            <img src="https://lh3.googleusercontent.com/CEopZGXE8sYGvZ6UupIuIf3O3Lg75ackNOKyz-AVpe4BD7Gw-dnbpaPb5bOeGgA2jXYEr_2LwuMEwe2neUwrvnxb_HFXpwdoHJxLRnilqi_GNB80RigC4CQ5g0bad6bRvmRE6iNd6geZtK8OnzFkdxzeZ5FYHfEVTqYP0S5kLcnJORKaAc_2gZUgxGFE5ifNRHwI3WauPKEddMTChGiuksOVU3qIp6E9CWKzCbSkgy8nlLcTodq2AvmauhZgfC_J_NcvyKc-_xwoLp0Zxk2KRAI7TdnL-yKRrZniWlqcqr2AhDZsIQEiKPiQwWA8HzpP9GXw_lVa0nFJrxqxC1TfygezvJfdXiVmxR18epC1dv-36zNnkWG6yGxzq4qciEWnDxDcHPaqef8NdgK6jzDbEujWPKKOS35scK8ncXJO7AUGpj-qXkJ6D-U8d69snooCHJ9uqWeu7O8S0I-td6wL8hrgkFZHOYWIHvDP20LNpdnBHmFKC9A-ciuc6O47rJM5Fg5vUhi8ndjW8vRJ0LNHZr9ifpL8cwjZY6-A7M-RT4RYsbhVd46lj3sdQXuD4oDRCuAZLqXmJKLn3zd527vLjyZdmtn1BBgSgHlzIMuHAND9V_rgJL07IREJh_0pMcjkvN5KWORd81XHWwmXu2Y-nASbsp6zeZI0ZC1b9Fb7fYFdJjCH_h1ZbYRWfoGEEw=w960-h720-no?authuser=0" alt="">
+		                        </div>
+		                        <figcaption>
+		                            Wild mountain goat at dawn outside our tent on a 25 Day Backpack Trip in the Absaroka-Beartooth Mountain Range, MT, USA
+		                            <span class="credit">Photo: Natalie DellaMaria</span>                            
+		                        </figcaption>
+		                    </figure>
+		                </li>
+		                <li class="carousel__slide">
+		                    <figure>
+		                        <div>
+		                            <img src="https://lh3.googleusercontent.com/TPTP5ZPTOgV5YP1pO8xFM3pQRiQ0i1hBxrdICdKVhVgnexoXGI2R8kmsT2DQgCy9OPYHWRt-5hKvbv5htZbhn6tYuGH4bQl_7JhJVg88dTcnvsmVNRnnwdpSYMmSZPRHZlp2Ek-XobjngVUr_cUWNJNJmHDV1MwogxCygDLYkKqPDBvPccgYuczCwKkj6H_4qgEBrFQR8KMr-OcaYcU23eus5UIsmqwGcaw7VSVvRD8p30q22ymmolNfgCwj0en0ifU95kOPOFvNde3ekJZZZAXZ-H0L9jAOFufewBc6sKFPOUkvAv9EhGgpABFkSir1eHxw0MgiRwsJsq1vp7APpi-fM2EsT3sc7R6VIjye4W7fyalPBmVxRMl6ejorwCbq5STgYAXPs9-NrFG-AAuarH2gCXuHs_b9lQRwpuZjVGAz9CySnsSyCm5WuhA_gTLXD5pugKiQv2mkE9K7Sk0kuKZhZtNeIrCyvJ73zUgvyU2f4SIW0twVSFZoMXUlY6EJCY_K7YzP-WxsQchsJBAW6GWS4Ov9wH_kn0dqj0iGG5zWalp98us2j5b55GjkRBEI3unWakLsgBkcKlsTOorD1fCA2-6toxmuurU5hWLm8eH69xVlOPsligjFXbKvEk6I1CKWGyA7mEIf14o2wzQT3fBE5rm92lXp3gFXhxhXU-YfeDc4GRMyqFXE3vyiRg=w2104-h1578-no?authuser=0" alt="">
+		                        </div>
+		                        <figcaption>
+		                            Hiking down to Lost Lake on 10 Day Backpacking Trip in Wind River Range, WY, USA
+		                            <span class="credit">Photo: Bo DellaMaria</span>                            
+		                        </figcaption>
+		                    </figure>
+		                </li>
+		                <li class="carousel__slide">
+		                    <figure>
+		                        <div>
+		                            <img src="https://lh3.googleusercontent.com/yUs7QGXLXA9bpr68YTHan_qawxwaTTUmHg_VxvRFaXc5lhENCmu-2nY3HD5oKrhLq-gm0cOyM5Yzm7CPKsyI-aXyrz2T2YMgQPVyGDkSw-t9tr3JMZi_Qordq-1ifny9NQTUgjqeiq36uJmabbmiuv9sWOFZ8pgGA8TFGerGw6kf0LMgoPceJtWLfQcAW8_Z96f424kqKtn7MWYT_wb1TvWlFk6H9mC36APA9K6D5CBfU-O88lTilrmFToTlzEnouskyKDMH9fzBAjAhHlDe_lJMda3nsslZ38Mfw36oFfrwdPF4PVkqIjO5WX_USFL58UXiAfbxVkP8-ALebQYdPOxUSSTX8bwdoyr4jmhSdRkYzJ2BbQlWdk_sKxxNjzPhwHCVEP6bcQtoUSqtoOrMTp9Dnxk7BNeYftbokhOsoHThuikHmOHNxXa5mI6TWbWlZvrszJJKfbjdwip68VAvGnfQ0ZepyoAL8gv-3HaEZY3xgYCc-WsYktat4KfpVPXfgThqvzEOQtPXGr3NQ6va8anBvluK02PcSZr4LqKdcU-blyCUmGVcpMpkXNgClz4tlmyE4xl3CqtTHgHmXQ83qH2TdWsd9eYqHgoVuHVnp5HIgY18-ZSc51giojwGioigJVJBITAqbUiGhLVfGl8hQuvvkGjmw59kzVWvtVzSi_272gAb1gQJciKZ0OI8Gg=w2104-h1578-no?authuser=0" alt="">
+		                        </div>
+		                        <figcaption>
+		                            View of Cape Town, South Africa from Robben Island
+		                            <span class="credit">Photo: Natalie DellaMaria</span>                            
+		                        </figcaption>
+		                    </figure>
+		                </li>
+		                <li class="carousel__slide">
+		                    <figure>
+		                        <div>
+		                            <img src="https://lh3.googleusercontent.com/IXYgUNvERm66DhaNVlNUwFV4o_npm44vLusRrGUzDFtknVo1FoDrXEuqZodB_IZ8BcSk-gZq2yS2UJCBXMVym-9U3XBkO_G7NvaGePc9jIVqPMwWN_BG-dDaktKTtpSF_f18znYQlEE2-yECg0oYRaZtp1A5Pwe9rh-gFC0B_H_Vw17EbLWO93e6fhNXu5KR88ZV6JU0d0YRGc8g56WTwX2cSEVajUV0dQ5SJtMgHVoNXjLnuSpET5QgjVCJ0lYn2AN7Nz3ICtxKhEy0L5oI4iKlNXhST1uctDT3zyiyTiHnV_Kq-VwQgwvaqlqVc6l6L4LMB41AkZts6p8OJtM2XH1nVpQH3_4USd3t6rgI9DXkn_RfZsF9wVFV1StDyq28isgqm7nJ5nmB-6NAjyWB-ntGnSvbGQo3tDcn7euZbRkGKhFjW0aIBFn9OaqEyLIiDM9OFJuxxDFamee7n2m6RVvC3pQn6sp0uqXM3-GD43Aprlu1vyXL1ifqY28I0MJvOk4Dik62_u9zmbnMvBTar4p9AJvIew1LLD8aawtJpefe_X_W5uwESRf9QSRN0LYBmq8SA97EpGSm0MdfYKrYyAC1lPxhYu-mZdn9wq8M1z1TDc19ZOaOxkpNrsNb6rn2WE4eHz4Xsuv81Pd0rZBKRMBFRTDxNtbsnsgaF3cDWesoWZ3UqRRXg8t2wuaoVQ=w1184-h1578-no?authuser=0" alt="">
+		                        </div>
+		                        <figcaption>
+		                            Flying over the Brooks Mountain Range, AK, USA
+		                            <span class="credit">Photo: Natalie DellaMaria</span>                            
+		                        </figcaption>
+		                    </figure>
+		                </li>
+		                <li class="carousel__slide">
+		                    <figure>
+		                        <div>
+		                            <img src="https://lh3.googleusercontent.com/oMjsXf1aog4YIhvpg0J6XgOjsuIPO-GTgBotFWW9MpsuYV48M5D9aztItpVU1MicBTezSKMvRfW3OaFr67GO5OlRKRet6Q3upm_GdwpNZxfDmfV4gtvg4p2C1dsjALe_WfDwXIp2Y97v1PQs4FGi-HAoNN02eVgUboEAth_ERKJHYRBroOhNAbAl-X_w0f7qo_DJ50A78heLExH4R6QAEJlZ8qVm--Bxhn_RAUCmMECYM5ERkwmJz0q9_1WxzgSH3PsDhc40XuwAkD8gIRmqM0gNEQytxEV5gqaQ3LEezq55OeIdjFjaYvesF97GGs-LLeqf7BPZyV3JBLCs3eEHYfoHPPRKwlcDLTJHj2ocEASiL3uERegVjAHpI8tOrE1CKcjAn3mfQKUQQ7sKA1vvzZ6BGpcTis70NmwTDlZFZwA6l_rbjrtX6eN0JcCXxuM9FJnMCQkYa9NaBNLHlOHVv-QYuD1oBKV33mhWrTd83qvQOuPB5decbAd96O8LjycVmqNyWeZk-7LouQSi1e4x9cFyh4UrepsC3i4431P3oHxqahQStnlDfuz4pjzA3MaMYPeKpmPP2vMFE_bkjVEmHZZRTUBCOm5_lky7sS1fh8eP8gMz9G1FrQIca3XjvavKKIOlNqvHaNtzQno-lDRhKIxR0I2_U1beog8nvt02_huFMW_y1ibT0yMOy6nVgA=w1184-h1578-no?authuser=0" alt="">
+		                        </div>
+		                        <figcaption>
+		                            Flowers growing through lava rocks in Craters of the Moon National Park, ID, USA
+		                            <span class="credit">Photo: Natalie DellaMaria</span>                            
+		                        </figcaption>
+		                    </figure>
+		                </li>
+		            </ul>    
+		            <ul class="carousel__thumbnails">
+		                <li>
+		                    <label for="slide-1"><img src="https://lh3.googleusercontent.com/7Mtutvkz3LOXUOpzYUtZ4_o4o-fnRAYFGhItQ3OYtSKZJSiBt35kEO1LOhJfrfR5e8Tt1HMCcaQIz_f_JbkxQtg3FuLNWUTR2d_fQHEHa9JFhz6HAuUagz4Kfax2xvarml60124Q1Y6l7GkSB_O8gXEQdMjgt-RUXKHnyJ7V6OFbmNVNaJmpfVznou9zDAQqLQWukgQFBYEC8wS7BD6sgs7GfZG1XzulI0bZ8bE3osz1fCJCBtHWGIGVIWwQP8zzz7VURI8IxHwEJ9EobTeL4tUcISnakLZQzaeID8OkTLTDqfWzMPpoUxCEU1w-N00HVv331S9K4Um1B3VKlxXHKjp7Gvm3eGIeHPHCEPgAlBYS6xIeX1JoX4I9ce4CFjSBQk-WkJQyNj2YPxAcoiGYD4Jx7cUcqeB3mPkW2vIpy8kP_aG9MU_CfgJdMski3NcDiGTztLbhn2AHlqCaAgkmlGU30hCECxga43Io08Eo5jzhr9f7WVPif-YDARLSpGQHFzReKMDwBWn0rt_s4BuibG-6vrdz_PCWPdtLwBIcPZlfOKJoqDyA8-ptuvWE8Bx9N_RVyWz16ItY_F0Oaf-xylmMoxPFvX4xsg88MRXyYa8N0wXHouG-SKM7ZmZTMiSbqGE6mDHNEOTrmsEPFWYSdJ1DpV3TNAlI7wZBrPi-60uMrAlJyaRIQOw6ZH3oZQ=w1600-h1200-no?authuser=0" alt=""></label>
+		                </li>
+		                <li>
+		                    <label for="slide-2"><img src="https://lh3.googleusercontent.com/CEopZGXE8sYGvZ6UupIuIf3O3Lg75ackNOKyz-AVpe4BD7Gw-dnbpaPb5bOeGgA2jXYEr_2LwuMEwe2neUwrvnxb_HFXpwdoHJxLRnilqi_GNB80RigC4CQ5g0bad6bRvmRE6iNd6geZtK8OnzFkdxzeZ5FYHfEVTqYP0S5kLcnJORKaAc_2gZUgxGFE5ifNRHwI3WauPKEddMTChGiuksOVU3qIp6E9CWKzCbSkgy8nlLcTodq2AvmauhZgfC_J_NcvyKc-_xwoLp0Zxk2KRAI7TdnL-yKRrZniWlqcqr2AhDZsIQEiKPiQwWA8HzpP9GXw_lVa0nFJrxqxC1TfygezvJfdXiVmxR18epC1dv-36zNnkWG6yGxzq4qciEWnDxDcHPaqef8NdgK6jzDbEujWPKKOS35scK8ncXJO7AUGpj-qXkJ6D-U8d69snooCHJ9uqWeu7O8S0I-td6wL8hrgkFZHOYWIHvDP20LNpdnBHmFKC9A-ciuc6O47rJM5Fg5vUhi8ndjW8vRJ0LNHZr9ifpL8cwjZY6-A7M-RT4RYsbhVd46lj3sdQXuD4oDRCuAZLqXmJKLn3zd527vLjyZdmtn1BBgSgHlzIMuHAND9V_rgJL07IREJh_0pMcjkvN5KWORd81XHWwmXu2Y-nASbsp6zeZI0ZC1b9Fb7fYFdJjCH_h1ZbYRWfoGEEw=w960-h720-no?authuser=0" alt=""></label>
+		                </li>
+		                <li>
+		                    <label for="slide-3"><img src="https://lh3.googleusercontent.com/TPTP5ZPTOgV5YP1pO8xFM3pQRiQ0i1hBxrdICdKVhVgnexoXGI2R8kmsT2DQgCy9OPYHWRt-5hKvbv5htZbhn6tYuGH4bQl_7JhJVg88dTcnvsmVNRnnwdpSYMmSZPRHZlp2Ek-XobjngVUr_cUWNJNJmHDV1MwogxCygDLYkKqPDBvPccgYuczCwKkj6H_4qgEBrFQR8KMr-OcaYcU23eus5UIsmqwGcaw7VSVvRD8p30q22ymmolNfgCwj0en0ifU95kOPOFvNde3ekJZZZAXZ-H0L9jAOFufewBc6sKFPOUkvAv9EhGgpABFkSir1eHxw0MgiRwsJsq1vp7APpi-fM2EsT3sc7R6VIjye4W7fyalPBmVxRMl6ejorwCbq5STgYAXPs9-NrFG-AAuarH2gCXuHs_b9lQRwpuZjVGAz9CySnsSyCm5WuhA_gTLXD5pugKiQv2mkE9K7Sk0kuKZhZtNeIrCyvJ73zUgvyU2f4SIW0twVSFZoMXUlY6EJCY_K7YzP-WxsQchsJBAW6GWS4Ov9wH_kn0dqj0iGG5zWalp98us2j5b55GjkRBEI3unWakLsgBkcKlsTOorD1fCA2-6toxmuurU5hWLm8eH69xVlOPsligjFXbKvEk6I1CKWGyA7mEIf14o2wzQT3fBE5rm92lXp3gFXhxhXU-YfeDc4GRMyqFXE3vyiRg=w2104-h1578-no?authuser=0" alt=""></label>
+		                </li>
+		                <li>
+		                    <label for="slide-4"><img src="https://lh3.googleusercontent.com/yUs7QGXLXA9bpr68YTHan_qawxwaTTUmHg_VxvRFaXc5lhENCmu-2nY3HD5oKrhLq-gm0cOyM5Yzm7CPKsyI-aXyrz2T2YMgQPVyGDkSw-t9tr3JMZi_Qordq-1ifny9NQTUgjqeiq36uJmabbmiuv9sWOFZ8pgGA8TFGerGw6kf0LMgoPceJtWLfQcAW8_Z96f424kqKtn7MWYT_wb1TvWlFk6H9mC36APA9K6D5CBfU-O88lTilrmFToTlzEnouskyKDMH9fzBAjAhHlDe_lJMda3nsslZ38Mfw36oFfrwdPF4PVkqIjO5WX_USFL58UXiAfbxVkP8-ALebQYdPOxUSSTX8bwdoyr4jmhSdRkYzJ2BbQlWdk_sKxxNjzPhwHCVEP6bcQtoUSqtoOrMTp9Dnxk7BNeYftbokhOsoHThuikHmOHNxXa5mI6TWbWlZvrszJJKfbjdwip68VAvGnfQ0ZepyoAL8gv-3HaEZY3xgYCc-WsYktat4KfpVPXfgThqvzEOQtPXGr3NQ6va8anBvluK02PcSZr4LqKdcU-blyCUmGVcpMpkXNgClz4tlmyE4xl3CqtTHgHmXQ83qH2TdWsd9eYqHgoVuHVnp5HIgY18-ZSc51giojwGioigJVJBITAqbUiGhLVfGl8hQuvvkGjmw59kzVWvtVzSi_272gAb1gQJciKZ0OI8Gg=w2104-h1578-no?authuser=0" alt=""></label>
+		                </li>
+		                <li>
+		                    <label for="slide-5"><img src="https://lh3.googleusercontent.com/IXYgUNvERm66DhaNVlNUwFV4o_npm44vLusRrGUzDFtknVo1FoDrXEuqZodB_IZ8BcSk-gZq2yS2UJCBXMVym-9U3XBkO_G7NvaGePc9jIVqPMwWN_BG-dDaktKTtpSF_f18znYQlEE2-yECg0oYRaZtp1A5Pwe9rh-gFC0B_H_Vw17EbLWO93e6fhNXu5KR88ZV6JU0d0YRGc8g56WTwX2cSEVajUV0dQ5SJtMgHVoNXjLnuSpET5QgjVCJ0lYn2AN7Nz3ICtxKhEy0L5oI4iKlNXhST1uctDT3zyiyTiHnV_Kq-VwQgwvaqlqVc6l6L4LMB41AkZts6p8OJtM2XH1nVpQH3_4USd3t6rgI9DXkn_RfZsF9wVFV1StDyq28isgqm7nJ5nmB-6NAjyWB-ntGnSvbGQo3tDcn7euZbRkGKhFjW0aIBFn9OaqEyLIiDM9OFJuxxDFamee7n2m6RVvC3pQn6sp0uqXM3-GD43Aprlu1vyXL1ifqY28I0MJvOk4Dik62_u9zmbnMvBTar4p9AJvIew1LLD8aawtJpefe_X_W5uwESRf9QSRN0LYBmq8SA97EpGSm0MdfYKrYyAC1lPxhYu-mZdn9wq8M1z1TDc19ZOaOxkpNrsNb6rn2WE4eHz4Xsuv81Pd0rZBKRMBFRTDxNtbsnsgaF3cDWesoWZ3UqRRXg8t2wuaoVQ=w1184-h1578-no?authuser=0" alt=""></label>
+		                </li>
+		                <li>
+		                    <label for="slide-6"><img src="https://lh3.googleusercontent.com/oMjsXf1aog4YIhvpg0J6XgOjsuIPO-GTgBotFWW9MpsuYV48M5D9aztItpVU1MicBTezSKMvRfW3OaFr67GO5OlRKRet6Q3upm_GdwpNZxfDmfV4gtvg4p2C1dsjALe_WfDwXIp2Y97v1PQs4FGi-HAoNN02eVgUboEAth_ERKJHYRBroOhNAbAl-X_w0f7qo_DJ50A78heLExH4R6QAEJlZ8qVm--Bxhn_RAUCmMECYM5ERkwmJz0q9_1WxzgSH3PsDhc40XuwAkD8gIRmqM0gNEQytxEV5gqaQ3LEezq55OeIdjFjaYvesF97GGs-LLeqf7BPZyV3JBLCs3eEHYfoHPPRKwlcDLTJHj2ocEASiL3uERegVjAHpI8tOrE1CKcjAn3mfQKUQQ7sKA1vvzZ6BGpcTis70NmwTDlZFZwA6l_rbjrtX6eN0JcCXxuM9FJnMCQkYa9NaBNLHlOHVv-QYuD1oBKV33mhWrTd83qvQOuPB5decbAd96O8LjycVmqNyWeZk-7LouQSi1e4x9cFyh4UrepsC3i4431P3oHxqahQStnlDfuz4pjzA3MaMYPeKpmPP2vMFE_bkjVEmHZZRTUBCOm5_lky7sS1fh8eP8gMz9G1FrQIca3XjvavKKIOlNqvHaNtzQno-lDRhKIxR0I2_U1beog8nvt02_huFMW_y1ibT0yMOy6nVgA=w1184-h1578-no?authuser=0" alt=""></label>
+		                </li>
+		            </ul>
+		        </div>
+		    </div>
+		</section>
+  
+
 		</div>
+
+
 	</body>
 
 
