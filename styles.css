@@ -307,7 +307,7 @@ section {
 .current h1 {
   color: white;
   font-size: 20pt;
-  align-self: center;
+  /*align-self: center;*/
   font-family: 'Catamaran', sans-serif;
   margin-bottom: 0;
 }
@@ -329,29 +329,39 @@ section {
   width: 60vw;
 }
 
+.current-book-row {
+  display: flex;
+  justify-content: space-around;
+  width: 35vw;
+}
+
 .current-books {
   width: 35vw;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-self: center;
 }
 
 .book {
   display: flex;
   flex-direction: column;
   width: auto;
-  margin: 2vw;
-  height: 35vh;
+  margin-left: 2vw;
+  margin-right: 2vw;
+  margin-top: 2vw;
   text-align: center;
 }
 
 .book img {
   width: auto;
-  height: 35vh;
+  height: 25vh;
 }
 
 .book h3 {
   color: white;
-  font-size: 15pt;
+  font-size: 12pt;
   align-self: center;
   font-family: 'Catamaran', sans-serif;
   margin-bottom: 0;
@@ -359,17 +369,18 @@ section {
 
 .book h4 {
   color: white;
-  font-size: 11pt;
+  font-size: 10pt;
   align-self: center;
   font-family: 'Catamaran', sans-serif;
   margin-bottom: 0;
-  margin-top: 3%;
+  margin-top: 2%;
   font-style: italic;
 }
 
 .prev-books {
   width: 60vw;
   flex-direction: column;
+  align-self: center;
 }
 
 .book-row {
