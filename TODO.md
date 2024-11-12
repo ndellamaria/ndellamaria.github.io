@@ -1,6 +1,6 @@
 ## TODO
 
-- [ ] Update email icon to make it bigger
+- [x] Update email icon to make it bigger
 - [ ] Fix videos not moving on mobile 
 - [ ] Add quotes dispersed between photos 
 - [ ] Add date trademark at the bottom 
