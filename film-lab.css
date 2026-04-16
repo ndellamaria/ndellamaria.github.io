@@ -731,9 +731,68 @@ input::placeholder {
   background: var(--bg);
 }
 
+/* ── CARD ACTIONS ROW ── */
+
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.card-actions .portfolio-toggle {
+  flex: 1;
+}
+
+.flag-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 10pt;
+  font-weight: 300;
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.flag-toggle:hover {
+  border-color: #b00;
+  color: #b00;
+}
+
+.flag-toggle.flagged {
+  border-color: #b00;
+  color: #b00;
+  background: rgba(180, 0, 0, 0.04);
+}
+
+/* ── REMOVED CARDS ── */
+
+.removed-card {
+  border-top-color: rgba(0, 0, 0, 0.15);
+  opacity: 0.85;
+}
+
+.removed-reason {
+  font-size: 9.5pt;
+  font-weight: 300;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+
+.recover-btn {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
 /* ── SECTIONS ── */
 
-#photos-section  { margin-bottom: 2rem; }
+#photos-section    { margin-bottom: 2rem; }
+#removed-section   { margin-bottom: 2rem; }
 #portfolio-section { margin-bottom: 4rem; }
 
 /* ── RESPONSIVE ── */

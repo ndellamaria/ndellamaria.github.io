@@ -3,16 +3,17 @@
 // SHA-256 of "darkroom" — change by running: echo -n "yourpassword" | shasum -a 256
 const PASSWORD_HASH = 'c6a31148a73f1db678218c65c55b395d76aa11d6b6c6407634f0399963b1af5e';
 
-const SESSION_KEY     = 'filmlab_auth';
-const API_KEY_STORE   = 'filmlab_api_key';
-const MODEL           = 'claude-sonnet-4-6';
-const CLASSIFIER_URL  = 'https://analog-image-classifier.onrender.com';
+const SESSION_KEY    = 'filmlab_auth';
+const API_KEY_STORE  = 'filmlab_api_key';
+const MODEL          = 'claude-sonnet-4-6';
+const CLASSIFIER_URL = 'https://analog-image-classifier.onrender.com';
 
 // ── STATE ───────────────────────────────────────────────────────────────────
 
-let photos  = [];   // { id, file, dataUrl, status, analysis }
-let apiKey  = '';
-let isAnalyzing = false;
+let photos        = [];   // { id, file, dataUrl, status, analysis, classification, inPortfolio, flagged }
+let removedPhotos = [];   // same shape; populated by classifier rejects + cleanup
+let apiKey        = '';
+let isAnalyzing   = false;
 let portfolioHTML = null;
 
 // ── UTILS ───────────────────────────────────────────────────────────────────
@@ -22,9 +23,7 @@ async function sha256(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function uid() {
-  return Math.random().toString(36).slice(2, 10);
-}
+function uid() { return Math.random().toString(36).slice(2, 10); }
 
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -35,7 +34,6 @@ function readFileAsDataUrl(file) {
   });
 }
 
-// Resize to max dimension for API efficiency (~1.5 MB target)
 function resizeDataUrl(dataUrl, maxPx = 1920) {
   return new Promise(resolve => {
     const img = new Image();
@@ -54,6 +52,14 @@ function resizeDataUrl(dataUrl, maxPx = 1920) {
   });
 }
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // ── CLASSIFIER ───────────────────────────────────────────────────────────────
 
 const CLASS_LABELS = {
@@ -66,9 +72,9 @@ const CLASS_LABELS = {
 
 function dataUrlToBlob(dataUrl) {
   const [header, data] = dataUrl.split(',');
-  const mime = header.match(/:(.*?);/)[1];
+  const mime  = header.match(/:(.*?);/)[1];
   const bytes = atob(data);
-  const arr = new Uint8Array(bytes.length);
+  const arr   = new Uint8Array(bytes.length);
   for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
   return new Blob([arr], { type: mime });
 }
@@ -77,9 +83,7 @@ async function checkClassifierHealth() {
   try {
     const res = await fetch(`${CLASSIFIER_URL}/health`, { signal: AbortSignal.timeout(2000) });
     return res.ok;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 async function classifyPhoto(dataUrl) {
@@ -94,15 +98,15 @@ function setClassifierStatus(online) {
   const dot  = document.getElementById('classifier-dot');
   const text = document.getElementById('classifier-text');
   if (!dot || !text) return;
-  dot.className  = `classifier-dot ${online ? 'online' : 'offline'}`;
+  dot.className    = `classifier-dot ${online ? 'online' : 'offline'}`;
   text.textContent = online ? 'Classifier online' : 'Classifier offline';
 }
 
 // ── AUTH ────────────────────────────────────────────────────────────────────
 
-const isLoggedIn = () => sessionStorage.getItem(SESSION_KEY) === '1';
+const isLoggedIn  = () => sessionStorage.getItem(SESSION_KEY) === '1';
 const setLoggedIn = () => sessionStorage.setItem(SESSION_KEY, '1');
-const logout = () => { sessionStorage.clear(); location.reload(); };
+const logout      = () => { sessionStorage.clear(); location.reload(); };
 
 // ── API KEY ─────────────────────────────────────────────────────────────────
 
@@ -141,7 +145,7 @@ Respond with valid JSON only — no markdown, no extra text:
 
 async function analyzePhotoWithClaude(dataUrl, classification = null) {
   const base64    = dataUrl.split(',')[1];
-  const mediaType = dataUrl.split(';')[0].split(':')[1]; // e.g. image/jpeg
+  const mediaType = dataUrl.split(';')[0].split(':')[1];
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -158,10 +162,7 @@ async function analyzePhotoWithClaude(dataUrl, classification = null) {
       messages: [{
         role: 'user',
         content: [
-          {
-            type: 'image',
-            source: { type: 'base64', media_type: mediaType, data: base64 }
-          },
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
           {
             type: 'text',
             text: classification
@@ -178,10 +179,8 @@ async function analyzePhotoWithClaude(dataUrl, classification = null) {
     throw new Error(err?.error?.message || `API error ${res.status}`);
   }
 
-  const data = await res.json();
-  const raw  = data.content[0].text;
-
-  // Extract JSON even if the model accidentally adds surrounding text
+  const data  = await res.json();
+  const raw   = data.content[0].text;
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse response from Margot.');
   return JSON.parse(match[0]);
@@ -193,11 +192,11 @@ function buildPortfolioHTML(picks) {
   const items = picks.map(p => /* html */`
     <div class="pf-item">
       <div class="pf-img-wrap">
-        <img src="${p.dataUrl}" alt="${escapeHtml(p.analysis.title)}" loading="lazy">
+        <img src="${p.dataUrl}" alt="${escapeHtml(p.analysis?.title || p.file.name)}" loading="lazy">
       </div>
       <div class="pf-meta">
-        <span class="pf-title">${escapeHtml(p.analysis.title)}</span>
-        <span class="pf-score">${p.analysis.score}/10</span>
+        <span class="pf-title">${escapeHtml(p.analysis?.title || p.file.name)}</span>
+        ${p.analysis ? `<span class="pf-score">${p.analysis.score}/10</span>` : ''}
       </div>
     </div>
   `).join('\n');
@@ -217,28 +216,13 @@ function buildPortfolioHTML(picks) {
     .pf-header { padding: 4rem 5% 2.5rem; }
     .pf-header h1 { font-size: 36pt; font-weight: 300; letter-spacing: 0.04em; }
     .pf-header p { font-size: 13pt; color: #888; margin-top: 0.5rem; font-style: italic; }
-    .pf-grid {
-      columns: 3; column-gap: 1.5rem;
-      padding: 0 5% 5rem;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
+    .pf-grid { columns: 3; column-gap: 1.5rem; padding: 0 5% 5rem; max-width: 1400px; margin: 0 auto; }
     @media (max-width: 900px) { .pf-grid { columns: 2; } }
     @media (max-width: 560px) { .pf-grid { columns: 1; } }
     .pf-item { break-inside: avoid; margin-bottom: 1.75rem; }
-    .pf-img-wrap {
-      border-radius: 6px;
-      overflow: hidden;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-      background: #000;
-    }
+    .pf-img-wrap { border-radius: 6px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.12); background: #000; }
     .pf-img-wrap img { width: 100%; height: auto; display: block; }
-    .pf-meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 0.5rem 0.25rem 0;
-    }
+    .pf-meta { display: flex; justify-content: space-between; align-items: baseline; padding: 0.5rem 0.25rem 0; }
     .pf-title { font-size: 11pt; color: #555; font-style: italic; }
     .pf-score { font-size: 10pt; color: #aaa; flex-shrink: 0; margin-left: 0.5rem; }
   </style>
@@ -253,14 +237,6 @@ ${items}
   </div>
 </body>
 </html>`;
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 // ── PHOTO MANAGEMENT ─────────────────────────────────────────────────────────
@@ -286,18 +262,21 @@ function removePhoto(id) {
   updateCount();
   if (photos.length === 0) {
     document.getElementById('photos-section').classList.add('hidden');
-    document.getElementById('portfolio-section').classList.add('hidden');
+    if (removedPhotos.length === 0) document.getElementById('portfolio-section').classList.add('hidden');
   }
 }
 
 function clearAll() {
-  photos = [];
+  photos        = [];
+  removedPhotos = [];
   portfolioHTML = null;
-  document.getElementById('photos-grid').innerHTML        = '';
-  document.getElementById('portfolio-grid').innerHTML     = '';
+  document.getElementById('photos-grid').innerHTML    = '';
+  document.getElementById('portfolio-grid').innerHTML = '';
+  document.getElementById('removed-grid').innerHTML   = '';
   document.getElementById('photos-section').classList.add('hidden');
   document.getElementById('portfolio-section').classList.add('hidden');
   document.getElementById('portfolio-download-section').classList.add('hidden');
+  document.getElementById('removed-section').classList.add('hidden');
   document.getElementById('filter-notice').classList.add('hidden');
   updateCount();
 }
@@ -306,6 +285,10 @@ function updateCount() {
   const n = photos.length;
   document.getElementById('photo-count').textContent =
     n ? `(${n} frame${n !== 1 ? 's' : ''})` : '';
+
+  const r = removedPhotos.length;
+  const el = document.getElementById('removed-count');
+  if (el) el.textContent = r ? `(${r})` : '';
 }
 
 // ── CARD BUILDERS ─────────────────────────────────────────────────────────────
@@ -347,8 +330,8 @@ function setCardDone(photo) {
   if (!card) return;
 
   if (photo.inPortfolio) card.classList.add('portfolio-pick');
+  if (photo.flagged)     card.classList.add('flagged');
 
-  // Hide the status badge once done
   const badge = document.getElementById(`status-${photo.id}`);
   if (badge) badge.className = 'status-badge status-done';
 
@@ -388,31 +371,17 @@ function setCardDone(photo) {
         <span class="tech-value">${escapeHtml(t.exposure || '—')}</span>
       </div>${filmLine}
     </div>
-    <button class="portfolio-toggle${photo.inPortfolio ? ' in-portfolio' : ''}" id="toggle-${photo.id}" data-id="${photo.id}">
-      ${photo.inPortfolio ? '★ In Portfolio' : '+ Add to Portfolio'}
-    </button>`;
+    <div class="card-actions">
+      <button class="portfolio-toggle${photo.inPortfolio ? ' in-portfolio' : ''}" id="toggle-${photo.id}" data-id="${photo.id}">
+        ${photo.inPortfolio ? '★ In Portfolio' : '+ Add to Portfolio'}
+      </button>
+      <button class="flag-toggle${photo.flagged ? ' flagged' : ''}" id="flag-${photo.id}" data-id="${photo.id}" title="Flag for removal">
+        ${photo.flagged ? '🚩 Flagged' : 'Flag'}
+      </button>
+    </div>`;
 
   body.querySelector('.portfolio-toggle').addEventListener('click', () => togglePortfolio(photo.id));
-}
-
-function togglePortfolio(id) {
-  const photo = photos.find(p => p.id === id);
-  if (!photo || photo.status !== 'done') return;
-
-  photo.inPortfolio = !photo.inPortfolio;
-
-  // Update card border
-  const card = document.getElementById(`card-${id}`);
-  card?.classList.toggle('portfolio-pick', photo.inPortfolio);
-
-  // Update toggle button label
-  const btn = document.getElementById(`toggle-${id}`);
-  if (btn) {
-    btn.textContent = photo.inPortfolio ? '★ In Portfolio' : '+ Add to Portfolio';
-    btn.classList.toggle('in-portfolio', photo.inPortfolio);
-  }
-
-  renderPortfolioSection();
+  body.querySelector('.flag-toggle').addEventListener('click', () => toggleFlag(photo.id));
 }
 
 function setCardError(photo, message) {
@@ -424,6 +393,44 @@ function setCardError(photo, message) {
       <p class="photo-card-filename">${escapeHtml(photo.file.name)}</p>
       <p class="error-msg" style="padding:0.75rem 0;">${escapeHtml(message)}</p>`;
   }
+}
+
+// ── FLAG TOGGLE ───────────────────────────────────────────────────────────────
+
+function toggleFlag(id) {
+  const photo = photos.find(p => p.id === id);
+  if (!photo || photo.status !== 'done') return;
+
+  photo.flagged = !photo.flagged;
+
+  document.getElementById(`card-${id}`)?.classList.toggle('flagged', photo.flagged);
+
+  const btn = document.getElementById(`flag-${id}`);
+  if (btn) {
+    btn.textContent = photo.flagged ? '🚩 Flagged' : 'Flag';
+    btn.classList.toggle('flagged', photo.flagged);
+  }
+
+  updateCleanupButtons();
+}
+
+// ── PORTFOLIO TOGGLE ──────────────────────────────────────────────────────────
+
+function togglePortfolio(id) {
+  const photo = photos.find(p => p.id === id);
+  if (!photo || photo.status !== 'done') return;
+
+  photo.inPortfolio = !photo.inPortfolio;
+
+  document.getElementById(`card-${id}`)?.classList.toggle('portfolio-pick', photo.inPortfolio);
+
+  const btn = document.getElementById(`toggle-${id}`);
+  if (btn) {
+    btn.textContent = photo.inPortfolio ? '★ In Portfolio' : '+ Add to Portfolio';
+    btn.classList.toggle('in-portfolio', photo.inPortfolio);
+  }
+
+  renderPortfolioSection();
 }
 
 // ── DEVELOP ROLL (classify → filter → analyze in parallel) ───────────────────
@@ -459,15 +466,18 @@ async function developRoll() {
       }
     }));
 
-    // Remove explicitly bad photos immediately
+    // Move non-good photos to the Removed section
     const bad = pending.filter(p => p.classification && p.classification.class !== 'good');
     if (bad.length) {
       bad.forEach(p => {
         photos = photos.filter(x => x.id !== p.id);
         document.getElementById(`card-${p.id}`)?.remove();
+        p.status = 'removed-classifier';
+        removedPhotos.push(p);
       });
       showFilterNotice(bad);
       updateCount();
+      renderRemovedSection();
     }
   }
 
@@ -517,19 +527,21 @@ function showFilterNotice(removed) {
   const notice = document.getElementById('filter-notice');
   const text   = document.getElementById('filter-notice-text');
   if (!notice || !text) return;
-  text.textContent = `Removed ${removed.length} photo${removed.length !== 1 ? 's' : ''}: ${parts.join(', ')}.`;
+  text.textContent = `Moved ${removed.length} photo${removed.length !== 1 ? 's' : ''} to Removed: ${parts.join(', ')}.`;
   notice.classList.remove('hidden');
 }
 
 // ── CLEAN UP ─────────────────────────────────────────────────────────────────
 
-const CLEANUP_THRESHOLD = 4; // score ≤ this is "really bad"
+const CLEANUP_THRESHOLD = 4;
 
 function cleanUp() {
-  const bad = photos.filter(p => p.status === 'done' && p.analysis?.score <= CLEANUP_THRESHOLD);
+  const bad = photos.filter(p => p.status === 'done' && p.analysis?.score <= CLEANUP_THRESHOLD && !p.flagged);
   bad.forEach(p => {
     p.flagged = true;
     document.getElementById(`card-${p.id}`)?.classList.add('flagged');
+    const btn = document.getElementById(`flag-${p.id}`);
+    if (btn) { btn.textContent = '🚩 Flagged'; btn.classList.add('flagged'); }
   });
   updateCleanupButtons();
 }
@@ -539,27 +551,123 @@ function removeFlagged() {
   flagged.forEach(p => {
     photos = photos.filter(x => x.id !== p.id);
     document.getElementById(`card-${p.id}`)?.remove();
+    p.status = 'removed-cleanup';
+    removedPhotos.push(p);
   });
   updateCount();
   updateCleanupButtons();
+  renderRemovedSection();
   renderPortfolioSection();
-  if (photos.length === 0) {
-    document.getElementById('photos-section').classList.add('hidden');
-    document.getElementById('portfolio-section').classList.add('hidden');
-  }
+  if (photos.length === 0) document.getElementById('photos-section').classList.add('hidden');
 }
 
 function updateCleanupButtons() {
-  const analyzed = photos.filter(p => p.status === 'done');
-  const flagged  = photos.filter(p => p.flagged);
-  const bad      = analyzed.filter(p => p.analysis?.score <= CLEANUP_THRESHOLD && !p.flagged);
+  const analyzed     = photos.filter(p => p.status === 'done');
+  const flagged      = photos.filter(p => p.flagged);
+  const unflaggedBad = analyzed.filter(p => p.analysis?.score <= CLEANUP_THRESHOLD && !p.flagged);
 
   const cleanBtn  = document.getElementById('cleanup-btn');
   const removeBtn = document.getElementById('remove-flagged-btn');
 
-  cleanBtn.classList.toggle('hidden', bad.length === 0);
+  cleanBtn.classList.toggle('hidden', unflaggedBad.length === 0);
   removeBtn.classList.toggle('hidden', flagged.length === 0);
   if (flagged.length > 0) removeBtn.textContent = `Remove flagged (${flagged.length})`;
+}
+
+// ── REMOVED SECTION ───────────────────────────────────────────────────────────
+
+function buildRemovedCard(photo) {
+  const div = document.createElement('div');
+  div.className = 'photo-card removed-card';
+  div.id = `removed-card-${photo.id}`;
+
+  const clsBadge = photo.classification
+    ? `<span class="cls-badge cls-${photo.classification.class.replace(/_/g, '-')}">${CLASS_LABELS[photo.classification.class] || photo.classification.class} · ${Math.round(photo.classification.confidence * 100)}%</span>`
+    : '';
+
+  const reason = photo.status === 'removed-classifier' && photo.classification
+    ? `Removed by classifier — ${CLASS_LABELS[photo.classification.class] || photo.classification.class}`
+    : photo.analysis
+    ? `Cleaned up — scored ${photo.analysis.score}/10`
+    : 'Removed';
+
+  const feedbackLine = photo.analysis?.teacherFeedback
+    ? `<p class="photo-card-feedback">${escapeHtml(photo.analysis.teacherFeedback)}</p>`
+    : '';
+
+  div.innerHTML = /* html */`
+    <div class="photo-card-img-wrap">
+      <img src="${photo.dataUrl}" alt="${escapeHtml(photo.file.name)}">
+      <button class="photo-card-remove" title="Delete permanently">✕</button>
+    </div>
+    <div class="photo-card-body">
+      <p class="photo-card-filename">${escapeHtml(photo.file.name)}</p>
+      ${clsBadge}
+      <p class="removed-reason">${escapeHtml(reason)}</p>
+      ${feedbackLine}
+      <button class="primary-btn recover-btn" id="recover-${photo.id}">Recover to Portfolio</button>
+    </div>
+  `;
+
+  div.querySelector('.photo-card-remove').addEventListener('click', () => deleteFromRemoved(photo.id));
+  div.querySelector('.recover-btn').addEventListener('click', () => addToPortfolioFromRemoved(photo.id));
+  return div;
+}
+
+function renderRemovedSection() {
+  const section = document.getElementById('removed-section');
+  const grid    = document.getElementById('removed-grid');
+  grid.innerHTML = '';
+
+  if (removedPhotos.length === 0) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  removedPhotos.forEach(p => grid.appendChild(buildRemovedCard(p)));
+  section.classList.remove('hidden');
+  updateCount();
+}
+
+function deleteFromRemoved(id) {
+  removedPhotos = removedPhotos.filter(p => p.id !== id);
+  document.getElementById(`removed-card-${id}`)?.remove();
+  updateCount();
+  if (removedPhotos.length === 0) document.getElementById('removed-section').classList.add('hidden');
+}
+
+async function addToPortfolioFromRemoved(id) {
+  const photo = removedPhotos.find(p => p.id === id);
+  if (!photo) return;
+
+  const btn = document.getElementById(`recover-${id}`);
+
+  // If no analysis yet, try to run Margot on it before adding
+  if (!photo.analysis) {
+    const key = storedKey();
+    if (key) {
+      apiKey = key;
+      if (btn) { btn.disabled = true; btn.textContent = 'Analyzing…'; }
+      try {
+        const resized  = await resizeDataUrl(photo.dataUrl);
+        photo.analysis = await analyzePhotoWithClaude(resized, photo.classification ?? null);
+      } catch (e) {
+        console.warn('Could not analyze recovered photo:', e.message);
+      }
+    }
+  }
+
+  removedPhotos = removedPhotos.filter(p => p.id !== id);
+  document.getElementById(`removed-card-${id}`)?.remove();
+
+  photo.status      = 'done';
+  photo.inPortfolio = true;
+  photo.flagged     = false;
+  photos.push(photo);
+
+  updateCount();
+  if (removedPhotos.length === 0) document.getElementById('removed-section').classList.add('hidden');
+  renderPortfolioSection();
 }
 
 // ── PORTFOLIO SECTION ─────────────────────────────────────────────────────────
@@ -567,7 +675,7 @@ function updateCleanupButtons() {
 function renderPortfolioSection() {
   const picks = photos
     .filter(p => p.inPortfolio)
-    .sort((a, b) => b.analysis.score - a.analysis.score);
+    .sort((a, b) => (b.analysis?.score ?? 0) - (a.analysis?.score ?? 0));
 
   const section = document.getElementById('portfolio-section');
   const grid    = document.getElementById('portfolio-grid');
@@ -593,18 +701,33 @@ function buildPortfolioCard(photo) {
   div.className = 'photo-card portfolio-pick';
   div.innerHTML = /* html */`
     <div class="photo-card-img-wrap">
-      <img src="${photo.dataUrl}" alt="${escapeHtml(analysis.title || '')}">
+      <img src="${photo.dataUrl}" alt="${escapeHtml(analysis?.title || photo.file.name)}">
     </div>
     <div class="photo-card-body">
-      <p class="photo-card-title">${escapeHtml(analysis.title || '')}</p>
+      <div class="photo-card-header">
+        <p class="photo-card-title">${escapeHtml(analysis?.title || photo.file.name)}</p>
+        ${analysis ? `<span class="photo-card-score">${analysis.score}/10</span>` : ''}
+      </div>
+      <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove from Portfolio</button>
     </div>`;
+  div.querySelector('.portfolio-toggle').addEventListener('click', () => {
+    photo.inPortfolio = false;
+    // Sync the main roll card toggle if it exists
+    const mainBtn = document.getElementById(`toggle-${photo.id}`);
+    if (mainBtn) {
+      mainBtn.textContent = '+ Add to Portfolio';
+      mainBtn.classList.remove('in-portfolio');
+      document.getElementById(`card-${photo.id}`)?.classList.remove('portfolio-pick');
+    }
+    renderPortfolioSection();
+  });
   return div;
 }
 
 async function exportPortfolio() {
   const picks = photos
     .filter(p => p.inPortfolio)
-    .sort((a, b) => b.analysis.score - a.analysis.score);
+    .sort((a, b) => (b.analysis?.score ?? 0) - (a.analysis?.score ?? 0));
 
   if (!picks.length) return;
 
@@ -613,16 +736,14 @@ async function exportPortfolio() {
   btn.textContent = 'Generating…';
 
   try {
-    // Downsize for embedding (keeps file reasonable)
     const sized = await Promise.all(
       picks.map(async p => ({ ...p, dataUrl: await resizeDataUrl(p.dataUrl, 1200) }))
     );
 
     portfolioHTML = buildPortfolioHTML(sized);
 
-    const blob = new Blob([portfolioHTML], { type: 'text/html' });
-    const url  = URL.createObjectURL(blob);
-
+    const blob  = new Blob([portfolioHTML], { type: 'text/html' });
+    const url   = URL.createObjectURL(blob);
     const frame = document.getElementById('portfolio-frame');
     frame.src   = url;
 
@@ -646,7 +767,6 @@ function downloadPortfolio() {
 
 // ── API KEY MODAL ─────────────────────────────────────────────────────────────
 
-// resumeDevelop: should we kick off developRoll after saving?
 let pendingDevelopAfterKey = false;
 
 function showApiKeyModal(andDevelop = false) {
@@ -665,10 +785,7 @@ function hideApiKeyModal() {
 
 function handleSaveApiKey() {
   const val = document.getElementById('api-key-input').value.trim();
-  if (!val) {
-    document.getElementById('api-key-error').classList.remove('hidden');
-    return;
-  }
+  if (!val) { document.getElementById('api-key-error').classList.remove('hidden'); return; }
   saveKey(val);
   hideApiKeyModal();
   if (pendingDevelopAfterKey) { pendingDevelopAfterKey = false; developRoll(); }
@@ -688,19 +805,14 @@ function showApp() {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ── Auth ──
   if (isLoggedIn()) { showApp(); }
 
   document.getElementById('login-form').addEventListener('submit', async e => {
     e.preventDefault();
     const pw   = document.getElementById('password-input').value;
     const hash = await sha256(pw);
-    if (hash === PASSWORD_HASH) {
-      setLoggedIn();
-      showApp();
-    } else {
-      document.getElementById('login-error').classList.remove('hidden');
-    }
+    if (hash === PASSWORD_HASH) { setLoggedIn(); showApp(); }
+    else document.getElementById('login-error').classList.remove('hidden');
   });
 
   // ── Drop zone ──
@@ -721,34 +833,24 @@ document.addEventListener('DOMContentLoaded', () => {
     addFiles(e.dataTransfer.files);
   });
 
-  fileInput.addEventListener('change', e => {
-    addFiles(e.target.files);
-    e.target.value = '';
-  });
-
-  folderInput.addEventListener('change', e => {
-    addFiles(e.target.files);
-    e.target.value = '';
-  });
+  fileInput.addEventListener('change',   e => { addFiles(e.target.files); e.target.value = ''; });
+  folderInput.addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
 
   // ── App buttons ──
-  document.getElementById('analyze-btn')            .addEventListener('click', developRoll);
+  document.getElementById('analyze-btn')           .addEventListener('click', developRoll);
   document.getElementById('filter-notice-dismiss') .addEventListener('click', () => document.getElementById('filter-notice').classList.add('hidden'));
-  document.getElementById('add-more-btn')      .addEventListener('click', () => fileInput.click());
-  document.getElementById('clear-btn')         .addEventListener('click', clearAll);
-  document.getElementById('cleanup-btn')       .addEventListener('click', cleanUp);
-  document.getElementById('remove-flagged-btn').addEventListener('click', removeFlagged);
-  document.getElementById('logout-btn')        .addEventListener('click', logout);
-  document.getElementById('change-api-key-btn').addEventListener('click', () => showApiKeyModal(false));
-  document.getElementById('export-portfolio-btn').addEventListener('click', exportPortfolio);
+  document.getElementById('add-more-btn')          .addEventListener('click', () => fileInput.click());
+  document.getElementById('clear-btn')             .addEventListener('click', clearAll);
+  document.getElementById('cleanup-btn')           .addEventListener('click', cleanUp);
+  document.getElementById('remove-flagged-btn')    .addEventListener('click', removeFlagged);
+  document.getElementById('logout-btn')            .addEventListener('click', logout);
+  document.getElementById('change-api-key-btn')    .addEventListener('click', () => showApiKeyModal(false));
+  document.getElementById('export-portfolio-btn')  .addEventListener('click', exportPortfolio);
   document.getElementById('download-portfolio-btn').addEventListener('click', downloadPortfolio);
 
   // ── API key modal ──
-  document.getElementById('save-api-key-btn')   .addEventListener('click', handleSaveApiKey);
-  document.getElementById('cancel-api-key-btn') .addEventListener('click', hideApiKeyModal);
-  document.getElementById('modal-overlay')      .addEventListener('click', hideApiKeyModal);
-
-  document.getElementById('api-key-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleSaveApiKey();
-  });
+  document.getElementById('save-api-key-btn')  .addEventListener('click', handleSaveApiKey);
+  document.getElementById('cancel-api-key-btn').addEventListener('click', hideApiKeyModal);
+  document.getElementById('modal-overlay')     .addEventListener('click', hideApiKeyModal);
+  document.getElementById('api-key-input')     .addEventListener('keydown', e => { if (e.key === 'Enter') handleSaveApiKey(); });
 });
