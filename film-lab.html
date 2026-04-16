@@ -49,7 +49,8 @@
 
     <header class="lab-header">
       <div class="header-left">
-        <a href="index.html" class="back-link">← back to site</a>
+        <a href="index.html" class="back-link" id="back-to-site">← back to site</a>
+        <button class="text-btn" id="back-to-roll-btn" style="display:none">← back to roll</button>
       </div>
       <div class="header-center">
         <span class="lab-title">Film Lab</span>
@@ -59,101 +60,111 @@
           <span class="classifier-dot offline" id="classifier-dot"></span>
           <span id="classifier-text">Classifier offline</span>
         </span>
+        <button id="removed-nav-btn" class="text-btn small hidden">Removed (<span id="removed-count">0</span>)</button>
         <button id="change-api-key-btn" class="text-btn small">API Key</button>
         <button id="logout-btn" class="text-btn small">Logout</button>
       </div>
     </header>
 
-    <main class="lab-main">
+    <!-- ── ROLL VIEW ── -->
+    <div id="view-roll">
+      <main class="lab-main">
 
-      <!-- Upload -->
-      <section class="upload-section">
-        <div id="drop-zone" class="drop-zone">
-          <div class="drop-zone-inner">
-            <div class="drop-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="1.5" />
-                <circle cx="24" cy="24" r="10" stroke="currentColor" stroke-width="1.5" />
-                <circle cx="24" cy="24" r="3" fill="currentColor" />
-                <line x1="24" y1="2" x2="24" y2="14" stroke="currentColor" stroke-width="1.5" />
-                <line x1="24" y1="34" x2="24" y2="46" stroke="currentColor" stroke-width="1.5" />
-                <line x1="2" y1="24" x2="14" y2="24" stroke="currentColor" stroke-width="1.5" />
-                <line x1="34" y1="24" x2="46" y2="24" stroke="currentColor" stroke-width="1.5" />
-              </svg>
+        <!-- Upload -->
+        <section class="upload-section">
+          <div id="drop-zone" class="drop-zone">
+            <div class="drop-zone-inner">
+              <div class="drop-icon">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="1.5" />
+                  <circle cx="24" cy="24" r="10" stroke="currentColor" stroke-width="1.5" />
+                  <circle cx="24" cy="24" r="3" fill="currentColor" />
+                  <line x1="24" y1="2" x2="24" y2="14" stroke="currentColor" stroke-width="1.5" />
+                  <line x1="24" y1="34" x2="24" y2="46" stroke="currentColor" stroke-width="1.5" />
+                  <line x1="2" y1="24" x2="14" y2="24" stroke="currentColor" stroke-width="1.5" />
+                  <line x1="34" y1="24" x2="46" y2="24" stroke="currentColor" stroke-width="1.5" />
+                </svg>
+              </div>
+              <p class="drop-title">Load your roll</p>
+              <p class="drop-sub">Drag &amp; drop photos here, or</p>
+              <div class="browse-row">
+                <label for="file-input" class="file-label">Browse Files</label>
+                <label for="folder-input" class="file-label">Browse Folder</label>
+              </div>
+              <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+              <input type="file" id="folder-input" multiple accept="image/*" webkitdirectory class="hidden">
+              <p class="drop-hint">JPG · PNG · TIFF · scanned negatives</p>
             </div>
-            <p class="drop-title">Load your roll</p>
-            <p class="drop-sub">Drag &amp; drop photos here, or</p>
-            <div class="browse-row">
-              <label for="file-input" class="file-label">Browse Files</label>
-              <label for="folder-input" class="file-label">Browse Folder</label>
-            </div>
-            <input type="file" id="file-input" multiple accept="image/*" class="hidden">
-            <input type="file" id="folder-input" multiple accept="image/*" webkitdirectory class="hidden">
-            <p class="drop-hint">JPG · PNG · TIFF · scanned negatives</p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Roll -->
-      <section id="photos-section" class="hidden">
+        <!-- Roll -->
+        <section id="photos-section" class="hidden">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">The Roll <span id="photo-count" class="count-badge"></span></h2>
+            </div>
+            <div class="section-actions">
+              <button id="add-more-btn" class="text-btn">+ Add more</button>
+              <button id="clear-btn" class="text-btn danger">Clear all</button>
+              <button id="remove-flagged-btn" class="text-btn danger hidden">Remove flagged</button>
+              <button id="keep-portfolio-btn" class="text-btn hidden">Keep portfolio only</button>
+              <button id="analyze-btn" class="primary-btn">Develop Roll →</button>
+            </div>
+          </div>
+          <div id="filter-notice" class="filter-notice hidden">
+            <span id="filter-notice-text"></span>
+            <button id="filter-notice-dismiss">✕</button>
+          </div>
+          <div id="photos-grid" class="photos-grid"></div>
+        </section>
+
+        <!-- Portfolio Picks -->
+        <section id="portfolio-section" class="hidden">
+          <div class="portfolio-divider"><span>✦ Portfolio Picks ✦</span></div>
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Best of the Roll</h2>
+              <p class="section-desc" id="portfolio-desc"></p>
+            </div>
+            <div class="section-actions">
+              <button id="export-portfolio-btn" class="primary-btn">Export Portfolio →</button>
+            </div>
+          </div>
+          <div id="portfolio-grid" class="photos-grid"></div>
+
+          <!-- Portfolio Preview + Download -->
+          <div id="portfolio-download-section" class="hidden">
+            <div class="section-header" style="margin-top: 3rem;">
+              <h2 class="section-title">Portfolio Preview</h2>
+              <button id="download-portfolio-btn" class="primary-btn">↓ Download HTML</button>
+            </div>
+            <div class="portfolio-frame-container">
+              <iframe id="portfolio-frame" title="Portfolio Preview"></iframe>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <!-- ── REMOVED VIEW ── -->
+    <div id="view-removed" class="hidden">
+      <main class="lab-main">
         <div class="section-header">
           <div>
-            <h2 class="section-title">The Roll <span id="photo-count" class="count-badge"></span></h2>
+            <h2 class="section-title">Removed</h2>
+            <p class="section-desc">Classifier rejects and flagged frames. Recover any to your portfolio.</p>
           </div>
           <div class="section-actions">
-            <button id="add-more-btn" class="text-btn">+ Add more</button>
-            <button id="clear-btn" class="text-btn danger">Clear all</button>
-            <button id="cleanup-btn" class="text-btn hidden">Clean up</button>
-            <button id="remove-flagged-btn" class="text-btn danger hidden">Remove flagged</button>
-            <button id="analyze-btn" class="primary-btn">Develop Roll →</button>
-          </div>
-        </div>
-        <div id="filter-notice" class="filter-notice hidden">
-          <span id="filter-notice-text"></span>
-          <button id="filter-notice-dismiss">✕</button>
-        </div>
-        <div id="photos-grid" class="photos-grid"></div>
-      </section>
-
-      <!-- Removed Photos -->
-      <section id="removed-section" class="hidden">
-        <div class="portfolio-divider"><span>✦ Removed ✦</span></div>
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">Removed <span id="removed-count" class="count-badge"></span></h2>
-            <p class="section-desc">Classifier rejects and cleaned-up frames. Recover any to your portfolio.</p>
+            <button id="clear-all-removed-btn" class="text-btn danger">Clear all</button>
           </div>
         </div>
         <div id="removed-grid" class="photos-grid"></div>
-      </section>
+        <p id="removed-empty" class="removed-empty hidden">Nothing removed yet.</p>
+      </main>
+    </div>
 
-      <!-- Portfolio Picks -->
-      <section id="portfolio-section" class="hidden">
-        <div class="portfolio-divider"><span>✦ Portfolio Picks ✦</span></div>
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">Best of the Roll</h2>
-            <p class="section-desc" id="portfolio-desc"></p>
-          </div>
-          <div class="section-actions">
-            <button id="export-portfolio-btn" class="primary-btn">Export Portfolio →</button>
-          </div>
-        </div>
-        <div id="portfolio-grid" class="photos-grid"></div>
-
-        <!-- Portfolio Preview + Download -->
-        <div id="portfolio-download-section" class="hidden">
-          <div class="section-header" style="margin-top: 3rem;">
-            <h2 class="section-title">Portfolio Preview</h2>
-            <button id="download-portfolio-btn" class="primary-btn">↓ Download HTML</button>
-          </div>
-          <div class="portfolio-frame-container">
-            <iframe id="portfolio-frame" title="Portfolio Preview"></iframe>
-          </div>
-        </div>
-      </section>
-
-    </main>
   </div>
 
   <script src="film-lab.js"></script>

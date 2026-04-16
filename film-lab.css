@@ -757,10 +757,7 @@ input::placeholder {
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
-.flag-toggle:hover {
-  border-color: #b00;
-  color: #b00;
-}
+.flag-toggle:hover { border-color: #b00; color: #b00; }
 
 .flag-toggle.flagged {
   border-color: #b00;
@@ -768,12 +765,7 @@ input::placeholder {
   background: rgba(180, 0, 0, 0.04);
 }
 
-/* ── REMOVED CARDS ── */
-
-.removed-card {
-  border-top-color: rgba(0, 0, 0, 0.15);
-  opacity: 0.85;
-}
+/* ── REMOVED VIEW ── */
 
 .removed-reason {
   font-size: 9.5pt;
@@ -789,10 +781,24 @@ input::placeholder {
   margin-top: 0.75rem;
 }
 
+.removed-empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-dim);
+  font-size: 12pt;
+  font-weight: 300;
+  font-style: italic;
+}
+
+#removed-nav-btn {
+  border: 1px solid var(--border-med);
+  border-radius: 3px;
+  padding: 0.25rem 0.6rem;
+}
+
 /* ── SECTIONS ── */
 
 #photos-section    { margin-bottom: 2rem; }
-#removed-section   { margin-bottom: 2rem; }
 #portfolio-section { margin-bottom: 4rem; }
 
 /* ── RESPONSIVE ── */

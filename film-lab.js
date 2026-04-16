@@ -3,15 +3,16 @@
 // SHA-256 of "darkroom" — change by running: echo -n "yourpassword" | shasum -a 256
 const PASSWORD_HASH = 'c6a31148a73f1db678218c65c55b395d76aa11d6b6c6407634f0399963b1af5e';
 
-const SESSION_KEY    = 'filmlab_auth';
-const API_KEY_STORE  = 'filmlab_api_key';
-const MODEL          = 'claude-sonnet-4-6';
-const CLASSIFIER_URL = 'https://analog-image-classifier.onrender.com';
+const SESSION_KEY         = 'filmlab_auth';
+const API_KEY_STORE       = 'filmlab_api_key';
+const MODEL               = 'claude-sonnet-4-6';
+const CLASSIFIER_URL      = 'https://analog-image-classifier.onrender.com';
+const MIN_GOOD_CONFIDENCE = 0.65; // "good" below this confidence is treated as uncertain → removed
 
 // ── STATE ───────────────────────────────────────────────────────────────────
 
-let photos        = [];   // { id, file, dataUrl, status, analysis, classification, inPortfolio, flagged }
-let removedPhotos = [];   // same shape; populated by classifier rejects + cleanup
+let photos        = [];
+let removedPhotos = [];
 let apiKey        = '';
 let isAnalyzing   = false;
 let portfolioHTML = null;
@@ -54,10 +55,8 @@ function resizeDataUrl(dataUrl, maxPx = 1920) {
 
 function escapeHtml(str) {
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ── CLASSIFIER ───────────────────────────────────────────────────────────────
@@ -115,30 +114,23 @@ const saveKey   = k => { localStorage.setItem(API_KEY_STORE, k); apiKey = k; };
 
 // ── SYSTEM PROMPT ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are Margot, a film photography instructor. Terse, direct, no flattery. Evaluate only on: framing, light, exposure, composition, film.
+const SYSTEM_PROMPT = `You are Margot, a film photography instructor. Terse, direct, no flattery.
 
-teacherFeedback is 1–2 sentences. State what works and what doesn't. If it's bad, say so plainly.
+For each photo give brief technical notes only — one phrase per category, plainly stated. No praise, no hedging, no rating.
 
-title is not a description of the photo. It is abstract and opaque — a fragment, a feeling, a word. Never literal. Examples of the register: "After the fact", "Held light", "Nowhere particular", "Salt", "The long wait". Avoid anything that names what is in the frame.
-
-Scoring: 1–4 = poor technical execution or no point of view. 5–6 = competent but unremarkable. 7 = solid. 8–9 = portfolio-ready. 10 = exceptional.
-
-portfolioWorthy is false if: unintentional blur, blown or crushed exposure without artistic intent, no clear subject, score ≤ 6. Apply a high bar.
+title is abstract and opaque — a fragment, a feeling, a word. Never literal or descriptive of the subject.
 
 Respond with valid JSON only — no markdown, no extra text:
 
 {
-  "score": <integer 1–10>,
-  "title": "<abstract, opaque title>",
-  "teacherFeedback": "<1–2 sentences, no flattery>",
+  "title": "<abstract title>",
+  "teacherFeedback": "<1–2 sentences of direct technical observation>",
   "technical": {
-    "framing": "<one phrase>",
-    "light": "<one phrase>",
     "exposure": "<one phrase>",
+    "lighting": "<one phrase>",
+    "composition": "<one phrase>",
     "film": "<stock or format if identifiable, otherwise omit>"
-  },
-  "portfolioWorthy": <true | false>,
-  "portfolioReasoning": "<one sentence>"
+  }
 }`;
 
 // ── CLAUDE API ───────────────────────────────────────────────────────────────
@@ -157,7 +149,7 @@ async function analyzePhotoWithClaude(dataUrl, classification = null) {
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 1200,
+      max_tokens: 600,
       system: SYSTEM_PROMPT,
       messages: [{
         role: 'user',
@@ -166,8 +158,8 @@ async function analyzePhotoWithClaude(dataUrl, classification = null) {
           {
             type: 'text',
             text: classification
-              ? `Please evaluate this film photograph. My classifier pre-screened it as "${classification.class}" (${Math.round(classification.confidence * 100)}% confidence). Use that as context but reach your own conclusion.`
-              : 'Please evaluate this film photograph.'
+              ? `Evaluate this film photograph. Classifier pre-screened as "${classification.class}" (${Math.round(classification.confidence * 100)}% confidence) — use as context only.`
+              : 'Evaluate this film photograph.'
           }
         ]
       }]
@@ -196,7 +188,6 @@ function buildPortfolioHTML(picks) {
       </div>
       <div class="pf-meta">
         <span class="pf-title">${escapeHtml(p.analysis?.title || p.file.name)}</span>
-        ${p.analysis ? `<span class="pf-score">${p.analysis.score}/10</span>` : ''}
       </div>
     </div>
   `).join('\n');
@@ -222,15 +213,14 @@ function buildPortfolioHTML(picks) {
     .pf-item { break-inside: avoid; margin-bottom: 1.75rem; }
     .pf-img-wrap { border-radius: 6px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.12); background: #000; }
     .pf-img-wrap img { width: 100%; height: auto; display: block; }
-    .pf-meta { display: flex; justify-content: space-between; align-items: baseline; padding: 0.5rem 0.25rem 0; }
+    .pf-meta { padding: 0.5rem 0.25rem 0; }
     .pf-title { font-size: 11pt; color: #555; font-style: italic; }
-    .pf-score { font-size: 10pt; color: #aaa; flex-shrink: 0; margin-left: 0.5rem; }
   </style>
 </head>
 <body>
   <header class="pf-header">
     <h1>35mm Film</h1>
-    <p>Selected frames — curated by Margot</p>
+    <p>Selected frames</p>
   </header>
   <div class="pf-grid">
 ${items}
@@ -247,7 +237,7 @@ async function addFiles(fileList) {
 
   for (const file of files) {
     const dataUrl = await readFileAsDataUrl(file);
-    const photo = { id: uid(), file, dataUrl, status: 'pending', analysis: null };
+    const photo   = { id: uid(), file, dataUrl, status: 'pending', analysis: null };
     photos.push(photo);
     document.getElementById('photos-grid').appendChild(buildCard(photo));
   }
@@ -260,10 +250,7 @@ function removePhoto(id) {
   photos = photos.filter(p => p.id !== id);
   document.getElementById(`card-${id}`)?.remove();
   updateCount();
-  if (photos.length === 0) {
-    document.getElementById('photos-section').classList.add('hidden');
-    if (removedPhotos.length === 0) document.getElementById('portfolio-section').classList.add('hidden');
-  }
+  if (photos.length === 0) document.getElementById('photos-section').classList.add('hidden');
 }
 
 function clearAll() {
@@ -276,19 +263,16 @@ function clearAll() {
   document.getElementById('photos-section').classList.add('hidden');
   document.getElementById('portfolio-section').classList.add('hidden');
   document.getElementById('portfolio-download-section').classList.add('hidden');
-  document.getElementById('removed-section').classList.add('hidden');
   document.getElementById('filter-notice').classList.add('hidden');
   updateCount();
+  updateRemovedNav();
+  updateRollButtons();
 }
 
 function updateCount() {
   const n = photos.length;
   document.getElementById('photo-count').textContent =
     n ? `(${n} frame${n !== 1 ? 's' : ''})` : '';
-
-  const r = removedPhotos.length;
-  const el = document.getElementById('removed-count');
-  if (el) el.textContent = r ? `(${r})` : '';
 }
 
 // ── CARD BUILDERS ─────────────────────────────────────────────────────────────
@@ -300,7 +284,7 @@ function buildCard(photo) {
   div.innerHTML = /* html */`
     <div class="photo-card-img-wrap">
       <img src="${photo.dataUrl}" alt="${escapeHtml(photo.file.name)}">
-      <button class="photo-card-remove" data-id="${photo.id}" title="Remove">✕</button>
+      <button class="photo-card-remove" title="Remove">✕</button>
       <span class="status-badge status-pending" id="status-${photo.id}">Pending</span>
     </div>
     <div class="photo-card-body" id="body-${photo.id}">
@@ -325,7 +309,6 @@ function setCardAnalyzing(photo) {
 }
 
 function setCardDone(photo) {
-  const { analysis } = photo;
   const card = document.getElementById(`card-${photo.id}`);
   if (!card) return;
 
@@ -338,7 +321,9 @@ function setCardDone(photo) {
   const body = document.getElementById(`body-${photo.id}`);
   if (!body) return;
 
+  const { analysis } = photo;
   const t = analysis.technical || {};
+
   const filmLine = t.film ? `
       <div class="tech-item">
         <span class="tech-label">Film</span>
@@ -352,31 +337,28 @@ function setCardDone(photo) {
   body.innerHTML = /* html */`
     <p class="photo-card-filename">${escapeHtml(photo.file.name)}</p>
     ${clsBadge}
-    <div class="photo-card-header">
-      <p class="photo-card-title">${escapeHtml(analysis.title || '')}</p>
-      <span class="photo-card-score">${analysis.score}/10</span>
-    </div>
+    <p class="photo-card-title">${escapeHtml(analysis.title || '')}</p>
     <p class="photo-card-feedback">${escapeHtml(analysis.teacherFeedback || '')}</p>
     <div class="technical-grid">
       <div class="tech-item">
-        <span class="tech-label">Framing</span>
-        <span class="tech-value">${escapeHtml(t.framing || '—')}</span>
-      </div>
-      <div class="tech-item">
-        <span class="tech-label">Light</span>
-        <span class="tech-value">${escapeHtml(t.light || '—')}</span>
-      </div>
-      <div class="tech-item">
         <span class="tech-label">Exposure</span>
         <span class="tech-value">${escapeHtml(t.exposure || '—')}</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-label">Lighting</span>
+        <span class="tech-value">${escapeHtml(t.lighting || '—')}</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-label">Composition</span>
+        <span class="tech-value">${escapeHtml(t.composition || '—')}</span>
       </div>${filmLine}
     </div>
     <div class="card-actions">
-      <button class="portfolio-toggle${photo.inPortfolio ? ' in-portfolio' : ''}" id="toggle-${photo.id}" data-id="${photo.id}">
+      <button class="portfolio-toggle${photo.inPortfolio ? ' in-portfolio' : ''}" id="toggle-${photo.id}">
         ${photo.inPortfolio ? '★ In Portfolio' : '+ Add to Portfolio'}
       </button>
-      <button class="flag-toggle${photo.flagged ? ' flagged' : ''}" id="flag-${photo.id}" data-id="${photo.id}" title="Flag for removal">
-        ${photo.flagged ? '🚩 Flagged' : 'Flag'}
+      <button class="flag-toggle${photo.flagged ? ' flagged' : ''}" id="flag-${photo.id}" title="Flag for removal">
+        ${photo.flagged ? '🚩' : 'Flag'}
       </button>
     </div>`;
 
@@ -388,40 +370,31 @@ function setCardError(photo, message) {
   const badge = document.getElementById(`status-${photo.id}`);
   if (badge) { badge.className = 'status-badge status-error'; badge.textContent = 'Error'; }
   const body = document.getElementById(`body-${photo.id}`);
-  if (body) {
-    body.innerHTML = /* html */`
-      <p class="photo-card-filename">${escapeHtml(photo.file.name)}</p>
-      <p class="error-msg" style="padding:0.75rem 0;">${escapeHtml(message)}</p>`;
-  }
+  if (body) body.innerHTML = /* html */`
+    <p class="photo-card-filename">${escapeHtml(photo.file.name)}</p>
+    <p class="error-msg" style="padding:0.75rem 0;">${escapeHtml(message)}</p>`;
 }
 
-// ── FLAG TOGGLE ───────────────────────────────────────────────────────────────
+// ── FLAG / PORTFOLIO TOGGLES ──────────────────────────────────────────────────
 
 function toggleFlag(id) {
   const photo = photos.find(p => p.id === id);
   if (!photo || photo.status !== 'done') return;
 
   photo.flagged = !photo.flagged;
-
   document.getElementById(`card-${id}`)?.classList.toggle('flagged', photo.flagged);
 
   const btn = document.getElementById(`flag-${id}`);
-  if (btn) {
-    btn.textContent = photo.flagged ? '🚩 Flagged' : 'Flag';
-    btn.classList.toggle('flagged', photo.flagged);
-  }
+  if (btn) { btn.textContent = photo.flagged ? '🚩' : 'Flag'; btn.classList.toggle('flagged', photo.flagged); }
 
-  updateCleanupButtons();
+  updateRollButtons();
 }
-
-// ── PORTFOLIO TOGGLE ──────────────────────────────────────────────────────────
 
 function togglePortfolio(id) {
   const photo = photos.find(p => p.id === id);
   if (!photo || photo.status !== 'done') return;
 
   photo.inPortfolio = !photo.inPortfolio;
-
   document.getElementById(`card-${id}`)?.classList.toggle('portfolio-pick', photo.inPortfolio);
 
   const btn = document.getElementById(`toggle-${id}`);
@@ -431,9 +404,10 @@ function togglePortfolio(id) {
   }
 
   renderPortfolioSection();
+  updateRollButtons();
 }
 
-// ── DEVELOP ROLL (classify → filter → analyze in parallel) ───────────────────
+// ── DEVELOP ROLL ──────────────────────────────────────────────────────────────
 
 async function developRoll() {
   if (isAnalyzing) return;
@@ -447,8 +421,7 @@ async function developRoll() {
 
   isAnalyzing = true;
   const btn = document.getElementById('analyze-btn');
-  btn.disabled    = true;
-  btn.textContent = 'Classifying…';
+  btn.disabled = true; btn.textContent = 'Classifying…';
 
   pending.forEach(p => { p.status = 'analyzing'; setCardAnalyzing(p); });
 
@@ -458,16 +431,18 @@ async function developRoll() {
 
   if (classifierUp) {
     await Promise.all(pending.map(async photo => {
-      try {
-        photo.classification = await classifyPhoto(photo.dataUrl);
-      } catch (err) {
-        photo.classification = null;
-        console.warn('Classification skipped:', photo.file.name, err.message);
-      }
+      try { photo.classification = await classifyPhoto(photo.dataUrl); }
+      catch (err) { photo.classification = null; console.warn('Classification skipped:', photo.file.name, err.message); }
     }));
 
-    // Move non-good photos to the Removed section
-    const bad = pending.filter(p => p.classification && p.classification.class !== 'good');
+    // Remove: not "good" OR "good" with low confidence
+    const bad = pending.filter(p =>
+      p.classification && (
+        p.classification.class !== 'good' ||
+        p.classification.confidence < MIN_GOOD_CONFIDENCE
+      )
+    );
+
     if (bad.length) {
       bad.forEach(p => {
         photos = photos.filter(x => x.id !== p.id);
@@ -477,17 +452,15 @@ async function developRoll() {
       });
       showFilterNotice(bad);
       updateCount();
-      renderRemovedSection();
+      updateRemovedNav();
     }
   }
 
-  // ── Phase 2: Margot reviews all passing photos in parallel ──
+  // ── Phase 2: Margot reviews remaining photos ──
   const toAnalyze = photos.filter(p => p.status === 'analyzing');
 
   if (!toAnalyze.length) {
-    isAnalyzing     = false;
-    btn.disabled    = false;
-    btn.textContent = 'Develop Roll →';
+    isAnalyzing = false; btn.disabled = false; btn.textContent = 'Develop Roll →';
     if (!photos.length) document.getElementById('photos-section').classList.add('hidden');
     return;
   }
@@ -496,10 +469,9 @@ async function developRoll() {
 
   await Promise.all(toAnalyze.map(async photo => {
     try {
-      const resized     = await resizeDataUrl(photo.dataUrl);
-      photo.analysis    = await analyzePhotoWithClaude(resized, photo.classification ?? null);
-      photo.status      = 'done';
-      photo.inPortfolio = photo.analysis.portfolioWorthy && photo.analysis.score >= 7;
+      const resized  = await resizeDataUrl(photo.dataUrl);
+      photo.analysis = await analyzePhotoWithClaude(resized, photo.classification ?? null);
+      photo.status   = 'done';
       setCardDone(photo);
     } catch (err) {
       photo.status = 'error';
@@ -508,18 +480,15 @@ async function developRoll() {
     }
   }));
 
-  isAnalyzing     = false;
-  btn.disabled    = false;
-  btn.textContent = 'Develop Roll →';
-
-  updateCleanupButtons();
+  isAnalyzing = false; btn.disabled = false; btn.textContent = 'Develop Roll →';
+  updateRollButtons();
   renderPortfolioSection();
 }
 
 function showFilterNotice(removed) {
   const counts = {};
   removed.forEach(p => {
-    const cls = p.classification.class;
+    const cls = p.classification?.class || 'unknown';
     counts[cls] = (counts[cls] || 0) + 1;
   });
   const parts = Object.entries(counts)
@@ -531,19 +500,20 @@ function showFilterNotice(removed) {
   notice.classList.remove('hidden');
 }
 
-// ── CLEAN UP ─────────────────────────────────────────────────────────────────
+// ── ROLL BUTTONS ──────────────────────────────────────────────────────────────
 
-const CLEANUP_THRESHOLD = 4;
+function updateRollButtons() {
+  const flagged      = photos.filter(p => p.flagged);
+  const hasPortfolio = photos.some(p => p.inPortfolio);
+  const hasNonPortfolioAnalyzed = photos.some(p => !p.inPortfolio && p.status === 'done');
 
-function cleanUp() {
-  const bad = photos.filter(p => p.status === 'done' && p.analysis?.score <= CLEANUP_THRESHOLD && !p.flagged);
-  bad.forEach(p => {
-    p.flagged = true;
-    document.getElementById(`card-${p.id}`)?.classList.add('flagged');
-    const btn = document.getElementById(`flag-${p.id}`);
-    if (btn) { btn.textContent = '🚩 Flagged'; btn.classList.add('flagged'); }
-  });
-  updateCleanupButtons();
+  const removeBtn  = document.getElementById('remove-flagged-btn');
+  const keepBtn    = document.getElementById('keep-portfolio-btn');
+
+  removeBtn.classList.toggle('hidden', flagged.length === 0);
+  if (flagged.length > 0) removeBtn.textContent = `Remove flagged (${flagged.length})`;
+
+  keepBtn.classList.toggle('hidden', !hasPortfolio || !hasNonPortfolioAnalyzed);
 }
 
 function removeFlagged() {
@@ -555,45 +525,88 @@ function removeFlagged() {
     removedPhotos.push(p);
   });
   updateCount();
-  updateCleanupButtons();
-  renderRemovedSection();
+  updateRollButtons();
+  updateRemovedNav();
+  renderRemovedView();
   renderPortfolioSection();
   if (photos.length === 0) document.getElementById('photos-section').classList.add('hidden');
 }
 
-function updateCleanupButtons() {
-  const analyzed     = photos.filter(p => p.status === 'done');
-  const flagged      = photos.filter(p => p.flagged);
-  const unflaggedBad = analyzed.filter(p => p.analysis?.score <= CLEANUP_THRESHOLD && !p.flagged);
-
-  const cleanBtn  = document.getElementById('cleanup-btn');
-  const removeBtn = document.getElementById('remove-flagged-btn');
-
-  cleanBtn.classList.toggle('hidden', unflaggedBad.length === 0);
-  removeBtn.classList.toggle('hidden', flagged.length === 0);
-  if (flagged.length > 0) removeBtn.textContent = `Remove flagged (${flagged.length})`;
+function keepPortfolioOnly() {
+  const toRemove = photos.filter(p => !p.inPortfolio);
+  toRemove.forEach(p => {
+    photos = photos.filter(x => x.id !== p.id);
+    document.getElementById(`card-${p.id}`)?.remove();
+    p.status = p.status === 'done' ? 'removed-cleanup' : 'removed-classifier';
+    removedPhotos.push(p);
+  });
+  updateCount();
+  updateRollButtons();
+  updateRemovedNav();
+  renderRemovedView();
+  if (photos.length === 0) document.getElementById('photos-section').classList.add('hidden');
 }
 
-// ── REMOVED SECTION ───────────────────────────────────────────────────────────
+// ── REMOVED VIEW ──────────────────────────────────────────────────────────────
+
+function showRemovedView() {
+  document.getElementById('view-roll').classList.add('hidden');
+  document.getElementById('view-removed').classList.remove('hidden');
+  document.getElementById('back-to-site').style.display = 'none';
+  document.getElementById('back-to-roll-btn').style.display = '';
+  renderRemovedView();
+}
+
+function showRollView() {
+  document.getElementById('view-removed').classList.add('hidden');
+  document.getElementById('view-roll').classList.remove('hidden');
+  document.getElementById('back-to-roll-btn').style.display = 'none';
+  document.getElementById('back-to-site').style.display = '';
+}
+
+function updateRemovedNav() {
+  const btn   = document.getElementById('removed-nav-btn');
+  const count = document.getElementById('removed-count');
+  const n     = removedPhotos.length;
+  if (count) count.textContent = n;
+  btn?.classList.toggle('hidden', n === 0);
+}
+
+function renderRemovedView() {
+  const grid  = document.getElementById('removed-grid');
+  const empty = document.getElementById('removed-empty');
+  grid.innerHTML = '';
+
+  if (removedPhotos.length === 0) {
+    empty?.classList.remove('hidden');
+    return;
+  }
+
+  empty?.classList.add('hidden');
+  removedPhotos.forEach(p => grid.appendChild(buildRemovedCard(p)));
+}
 
 function buildRemovedCard(photo) {
   const div = document.createElement('div');
-  div.className = 'photo-card removed-card';
+  div.className = 'photo-card';
   div.id = `removed-card-${photo.id}`;
 
   const clsBadge = photo.classification
     ? `<span class="cls-badge cls-${photo.classification.class.replace(/_/g, '-')}">${CLASS_LABELS[photo.classification.class] || photo.classification.class} · ${Math.round(photo.classification.confidence * 100)}%</span>`
     : '';
 
-  const reason = photo.status === 'removed-classifier' && photo.classification
-    ? `Removed by classifier — ${CLASS_LABELS[photo.classification.class] || photo.classification.class}`
-    : photo.analysis
-    ? `Cleaned up — scored ${photo.analysis.score}/10`
-    : 'Removed';
+  let reason = 'Removed';
+  if (photo.status === 'removed-classifier' && photo.classification) {
+    const label = CLASS_LABELS[photo.classification.class] || photo.classification.class;
+    reason = photo.classification.class === 'good'
+      ? `Uncertain classifier result (${Math.round(photo.classification.confidence * 100)}% confidence)`
+      : `Removed by classifier — ${label}`;
+  } else if (photo.status === 'removed-cleanup') {
+    reason = 'Flagged and removed';
+  }
 
   const feedbackLine = photo.analysis?.teacherFeedback
-    ? `<p class="photo-card-feedback">${escapeHtml(photo.analysis.teacherFeedback)}</p>`
-    : '';
+    ? `<p class="photo-card-feedback">${escapeHtml(photo.analysis.teacherFeedback)}</p>` : '';
 
   div.innerHTML = /* html */`
     <div class="photo-card-img-wrap">
@@ -614,26 +627,12 @@ function buildRemovedCard(photo) {
   return div;
 }
 
-function renderRemovedSection() {
-  const section = document.getElementById('removed-section');
-  const grid    = document.getElementById('removed-grid');
-  grid.innerHTML = '';
-
-  if (removedPhotos.length === 0) {
-    section.classList.add('hidden');
-    return;
-  }
-
-  removedPhotos.forEach(p => grid.appendChild(buildRemovedCard(p)));
-  section.classList.remove('hidden');
-  updateCount();
-}
-
 function deleteFromRemoved(id) {
   removedPhotos = removedPhotos.filter(p => p.id !== id);
   document.getElementById(`removed-card-${id}`)?.remove();
-  updateCount();
-  if (removedPhotos.length === 0) document.getElementById('removed-section').classList.add('hidden');
+  updateRemovedNav();
+  const empty = document.getElementById('removed-empty');
+  if (removedPhotos.length === 0) empty?.classList.remove('hidden');
 }
 
 async function addToPortfolioFromRemoved(id) {
@@ -642,7 +641,6 @@ async function addToPortfolioFromRemoved(id) {
 
   const btn = document.getElementById(`recover-${id}`);
 
-  // If no analysis yet, try to run Margot on it before adding
   if (!photo.analysis) {
     const key = storedKey();
     if (key) {
@@ -653,6 +651,7 @@ async function addToPortfolioFromRemoved(id) {
         photo.analysis = await analyzePhotoWithClaude(resized, photo.classification ?? null);
       } catch (e) {
         console.warn('Could not analyze recovered photo:', e.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Recover to Portfolio'; }
       }
     }
   }
@@ -665,33 +664,36 @@ async function addToPortfolioFromRemoved(id) {
   photo.flagged     = false;
   photos.push(photo);
 
-  updateCount();
-  if (removedPhotos.length === 0) document.getElementById('removed-section').classList.add('hidden');
+  updateRemovedNav();
+  updateRollButtons();
   renderPortfolioSection();
+
+  const empty = document.getElementById('removed-empty');
+  if (removedPhotos.length === 0) empty?.classList.remove('hidden');
+}
+
+function clearAllRemoved() {
+  removedPhotos = [];
+  document.getElementById('removed-grid').innerHTML = '';
+  document.getElementById('removed-empty')?.classList.remove('hidden');
+  updateRemovedNav();
 }
 
 // ── PORTFOLIO SECTION ─────────────────────────────────────────────────────────
 
 function renderPortfolioSection() {
-  const picks = photos
-    .filter(p => p.inPortfolio)
-    .sort((a, b) => (b.analysis?.score ?? 0) - (a.analysis?.score ?? 0));
-
+  const picks   = photos.filter(p => p.inPortfolio);
   const section = document.getElementById('portfolio-section');
   const grid    = document.getElementById('portfolio-grid');
   grid.innerHTML = '';
 
-  if (picks.length === 0) {
-    section.classList.add('hidden');
-    return;
-  }
+  if (picks.length === 0) { section.classList.add('hidden'); return; }
 
   picks.forEach(p => grid.appendChild(buildPortfolioCard(p)));
 
   const n = picks.length;
   document.getElementById('portfolio-desc').textContent =
     `${n} frame${n !== 1 ? 's' : ''} selected for portfolio.`;
-
   section.classList.remove('hidden');
 }
 
@@ -704,55 +706,42 @@ function buildPortfolioCard(photo) {
       <img src="${photo.dataUrl}" alt="${escapeHtml(analysis?.title || photo.file.name)}">
     </div>
     <div class="photo-card-body">
-      <div class="photo-card-header">
-        <p class="photo-card-title">${escapeHtml(analysis?.title || photo.file.name)}</p>
-        ${analysis ? `<span class="photo-card-score">${analysis.score}/10</span>` : ''}
-      </div>
+      <p class="photo-card-title">${escapeHtml(analysis?.title || photo.file.name)}</p>
       <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove from Portfolio</button>
     </div>`;
   div.querySelector('.portfolio-toggle').addEventListener('click', () => {
     photo.inPortfolio = false;
-    // Sync the main roll card toggle if it exists
     const mainBtn = document.getElementById(`toggle-${photo.id}`);
-    if (mainBtn) {
-      mainBtn.textContent = '+ Add to Portfolio';
-      mainBtn.classList.remove('in-portfolio');
-      document.getElementById(`card-${photo.id}`)?.classList.remove('portfolio-pick');
-    }
+    if (mainBtn) { mainBtn.textContent = '+ Add to Portfolio'; mainBtn.classList.remove('in-portfolio'); }
+    document.getElementById(`card-${photo.id}`)?.classList.remove('portfolio-pick');
     renderPortfolioSection();
+    updateRollButtons();
   });
   return div;
 }
 
 async function exportPortfolio() {
-  const picks = photos
-    .filter(p => p.inPortfolio)
-    .sort((a, b) => (b.analysis?.score ?? 0) - (a.analysis?.score ?? 0));
-
+  const picks = photos.filter(p => p.inPortfolio);
   if (!picks.length) return;
 
   const btn = document.getElementById('export-portfolio-btn');
-  btn.disabled    = true;
-  btn.textContent = 'Generating…';
+  btn.disabled = true; btn.textContent = 'Generating…';
 
   try {
     const sized = await Promise.all(
       picks.map(async p => ({ ...p, dataUrl: await resizeDataUrl(p.dataUrl, 1200) }))
     );
-
     portfolioHTML = buildPortfolioHTML(sized);
 
     const blob  = new Blob([portfolioHTML], { type: 'text/html' });
     const url   = URL.createObjectURL(blob);
-    const frame = document.getElementById('portfolio-frame');
-    frame.src   = url;
+    document.getElementById('portfolio-frame').src = url;
 
     const dl = document.getElementById('portfolio-download-section');
     dl.classList.remove('hidden');
     dl.scrollIntoView({ behavior: 'smooth' });
   } finally {
-    btn.disabled    = false;
-    btn.textContent = 'Export Portfolio →';
+    btn.disabled = false; btn.textContent = 'Export Portfolio →';
   }
 }
 
@@ -760,8 +749,7 @@ function downloadPortfolio() {
   if (!portfolioHTML) return;
   const blob = new Blob([portfolioHTML], { type: 'text/html' });
   const url  = URL.createObjectURL(blob);
-  const a    = Object.assign(document.createElement('a'), { href: url, download: 'film-portfolio.html' });
-  a.click();
+  Object.assign(document.createElement('a'), { href: url, download: 'film-portfolio.html' }).click();
   URL.revokeObjectURL(url);
 }
 
@@ -805,17 +793,16 @@ function showApp() {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  if (isLoggedIn()) { showApp(); }
+  if (isLoggedIn()) showApp();
 
   document.getElementById('login-form').addEventListener('submit', async e => {
     e.preventDefault();
-    const pw   = document.getElementById('password-input').value;
-    const hash = await sha256(pw);
+    const hash = await sha256(document.getElementById('password-input').value);
     if (hash === PASSWORD_HASH) { setLoggedIn(); showApp(); }
     else document.getElementById('login-error').classList.remove('hidden');
   });
 
-  // ── Drop zone ──
+  // Drop zone
   const dropZone    = document.getElementById('drop-zone');
   const fileInput   = document.getElementById('file-input');
   const folderInput = document.getElementById('folder-input');
@@ -824,31 +811,32 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target.closest('label') || e.target === fileInput || e.target === folderInput) return;
     fileInput.click();
   });
-
   dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
   dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('drag-over'));
   dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    addFiles(e.dataTransfer.files);
+    e.preventDefault(); dropZone.classList.remove('drag-over'); addFiles(e.dataTransfer.files);
   });
-
   fileInput.addEventListener('change',   e => { addFiles(e.target.files); e.target.value = ''; });
   folderInput.addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
 
-  // ── App buttons ──
+  // Roll buttons
   document.getElementById('analyze-btn')           .addEventListener('click', developRoll);
   document.getElementById('filter-notice-dismiss') .addEventListener('click', () => document.getElementById('filter-notice').classList.add('hidden'));
   document.getElementById('add-more-btn')          .addEventListener('click', () => fileInput.click());
   document.getElementById('clear-btn')             .addEventListener('click', clearAll);
-  document.getElementById('cleanup-btn')           .addEventListener('click', cleanUp);
   document.getElementById('remove-flagged-btn')    .addEventListener('click', removeFlagged);
+  document.getElementById('keep-portfolio-btn')    .addEventListener('click', keepPortfolioOnly);
   document.getElementById('logout-btn')            .addEventListener('click', logout);
   document.getElementById('change-api-key-btn')    .addEventListener('click', () => showApiKeyModal(false));
   document.getElementById('export-portfolio-btn')  .addEventListener('click', exportPortfolio);
   document.getElementById('download-portfolio-btn').addEventListener('click', downloadPortfolio);
 
-  // ── API key modal ──
+  // Navigation
+  document.getElementById('removed-nav-btn')    .addEventListener('click', showRemovedView);
+  document.getElementById('back-to-roll-btn')   .addEventListener('click', showRollView);
+  document.getElementById('clear-all-removed-btn').addEventListener('click', clearAllRemoved);
+
+  // API key modal
   document.getElementById('save-api-key-btn')  .addEventListener('click', handleSaveApiKey);
   document.getElementById('cancel-api-key-btn').addEventListener('click', hideApiKeyModal);
   document.getElementById('modal-overlay')     .addEventListener('click', hideApiKeyModal);
