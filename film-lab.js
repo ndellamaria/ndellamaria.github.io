@@ -12,7 +12,7 @@ const ANTHROPIC_PROXY     = `${CLASSIFIER_URL}/anthropic/messages`;
 const RUNWAY_PROXY        = `${CLASSIFIER_URL}/runway`;
 const MIN_GOOD_CONFIDENCE = 0.65; // "good" below this confidence is treated as uncertain → removed
 
-const SERENE_PROMPT = 'Barely perceptible, dreamlike movement — soft breeze through foliage, gentle light drift, slow cloud or water surface motion. Preserve film grain, color palette, and composition exactly. 5 seconds, 24fps, seamless loop. Serene, meditative, cinematic.';
+const SERENE_PROMPT = 'Barely perceptible, dreamlike movement — soft breeze through foliage, gentle light shift, slow cloud or water surface motion. The first and last frames must be visually identical so the clip loops without any visible jump. Preserve film grain, color palette, and composition exactly. 5 seconds, 24fps. Serene, meditative, cinematic.';
 
 // ── STATE ───────────────────────────────────────────────────────────────────
 
@@ -678,6 +678,59 @@ function clearAllRemoved() {
   updateRemovedNav();
 }
 
+// ── SEAMLESS VIDEO LOOP ───────────────────────────────────────────────────────
+
+function createSeamlessVideo(src) {
+  const XFADE = 0.9;
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:relative;width:100%;overflow:hidden;';
+
+  function makeVideo() {
+    const v = document.createElement('video');
+    v.src         = src;
+    v.muted       = true;
+    v.playsInline = true;
+    v.autoplay    = true;
+    v.loop        = false;
+    v.style.cssText = 'width:100%;display:block;';
+    return v;
+  }
+
+  function attachLoop(current) {
+    current.addEventListener('timeupdate', function onUpdate() {
+      if (!current.duration) return;
+      if (current.duration - current.currentTime > XFADE) return;
+
+      current.removeEventListener('timeupdate', onUpdate);
+
+      const next = makeVideo();
+      next.style.cssText += 'position:absolute;inset:0;opacity:0;';
+      wrap.appendChild(next);
+      next.play();
+
+      requestAnimationFrame(() => {
+        next.style.transition    = `opacity ${XFADE}s ease`;
+        current.style.transition = `opacity ${XFADE}s ease`;
+        next.style.opacity    = '1';
+        current.style.opacity = '0';
+      });
+
+      setTimeout(() => {
+        current.remove();
+        next.style.cssText = 'width:100%;display:block;';
+        attachLoop(next);
+      }, XFADE * 1000 + 50);
+    });
+  }
+
+  const first = makeVideo();
+  wrap.appendChild(first);
+  first.play();
+  attachLoop(first);
+  return wrap;
+}
+
 // ── ANIMATION ────────────────────────────────────────────────────────────────
 
 async function animatePhoto(photo) {
@@ -729,7 +782,8 @@ function refreshPortfolioCard(photo) {
   const animBtn = card.querySelector('.animate-btn');
 
   if (photo.videoUrl) {
-    imgWrap.innerHTML = `<video autoplay loop muted playsinline src="${photo.videoUrl}" style="width:100%;display:block;"></video>`;
+    imgWrap.innerHTML = '';
+    imgWrap.appendChild(createSeamlessVideo(photo.videoUrl));
     if (animBtn) { animBtn.textContent = 'Un-animate'; animBtn.classList.add('animated'); animBtn.disabled = false; }
   } else if (photo.animating) {
     imgWrap.innerHTML = `<img src="${photo.dataUrl}" alt=""><div class="anim-overlay">Animating…</div>`;
@@ -768,15 +822,10 @@ function buildPortfolioCard(photo) {
   div.className = 'photo-card portfolio-pick';
   div.id = `pf-card-${photo.id}`;
 
-  const mediaHtml = photo.videoUrl
-    ? `<video autoplay loop muted playsinline src="${photo.videoUrl}" style="width:100%;display:block;"></video>`
-    : `<img src="${photo.dataUrl}" alt="${escapeHtml(analysis?.title || photo.file.name)}">`;
-
   const animBtnText = photo.animating ? 'Animating…' : photo.videoUrl ? 'Un-animate' : 'Animate';
 
   div.innerHTML = /* html */`
     <div class="photo-card-img-wrap">
-      ${mediaHtml}
       ${photo.animating ? '<div class="anim-overlay">Animating…</div>' : ''}
     </div>
     <div class="photo-card-body">
@@ -786,6 +835,16 @@ function buildPortfolioCard(photo) {
         <button class="animate-btn${photo.videoUrl ? ' animated' : ''}" ${photo.animating ? 'disabled' : ''} data-id="${photo.id}">${animBtnText}</button>
       </div>
     </div>`;
+
+  const imgWrap = div.querySelector('.photo-card-img-wrap');
+  if (photo.videoUrl) {
+    imgWrap.prepend(createSeamlessVideo(photo.videoUrl));
+  } else {
+    const img = document.createElement('img');
+    img.src = photo.dataUrl;
+    img.alt = escapeHtml(analysis?.title || photo.file.name);
+    imgWrap.prepend(img);
+  }
 
   div.querySelector('.portfolio-toggle').addEventListener('click', () => {
     photo.inPortfolio = false;
