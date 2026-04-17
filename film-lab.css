@@ -796,11 +796,17 @@ input::placeholder {
 
 .judge-row {
   display: flex;
-  align-items: baseline;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.35rem;
   margin-top: 0.6rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--border);
+}
+
+.judge-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
 .judge-score {
@@ -833,6 +839,37 @@ input::placeholder {
   color: #e06060;
   flex-shrink: 0;
   cursor: default;
+}
+
+.judge-suggestions {
+  margin-top: 0.1rem;
+}
+
+.judge-suggestions-toggle {
+  font-size: 8.5pt;
+  font-weight: 300;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  list-style: none;
+  padding: 0;
+  user-select: none;
+}
+
+.judge-suggestions-toggle:hover { color: var(--text); }
+
+.judge-suggestion-list {
+  margin: 0.35rem 0 0 0.75rem;
+  padding: 0;
+  list-style: disc;
+}
+
+.judge-suggestion-list li {
+  font-size: 8.5pt;
+  font-weight: 300;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin-bottom: 0.25rem;
 }
 
 /* ── PHOTO META OVERLAY (location / date on hover) ── */
