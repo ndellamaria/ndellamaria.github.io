@@ -117,7 +117,7 @@ const SYSTEM_PROMPT = `You are a film photography instructor. Terse, direct, no 
 
 For each photo give brief technical notes only — one phrase per category, plainly stated. No praise, no hedging, no rating.
 
-title is abstract and opaque — a fragment, a feeling, a word. Never literal or descriptive of the subject.
+title is poetic and specific to this image — a fragment, a feeling, an unexpected word or phrase lightly suggested by the composition, light quality, subject, or mood. Avoid generic titles. Each should feel like it could only belong to this particular frame.
 
 animatable: true if the photo contains NO people and the subject (nature, landscape, sky, water, foliage, architecture) would benefit from subtle looping motion. false for portraits, group shots, or subjects where motion would look unnatural.
 
@@ -344,7 +344,6 @@ function setCardAnalyzing(photo) {
     body.innerHTML = /* html */`
       <div class="card-loading">
         <div class="spinner"></div>
-        <span>Reviewing…</span>
       </div>`;
   }
 }
