@@ -228,7 +228,7 @@ async function loadTestRoll() {
   btn.textContent = 'Loading…';
 
   try {
-    const filenames = await fetch(TEST_ROLL_MANIFEST).then(r => r.json());
+    const filenames = await fetch(TEST_ROLL_MANIFEST, { cache: 'no-store' }).then(r => r.json());
 
     if (!filenames.length) {
       btn.textContent = 'No test photos yet';
