@@ -14,8 +14,9 @@ async function renderPortfolio() {
     const orientation = `onload="this.setAttribute('data-orientation',this.naturalHeight>this.naturalWidth?'portrait':'landscape')"`;
 
     const videoHtml = hasVideo ? `
-      <video muted playsinline loop preload="none" poster="pics/${p.filename}">
-        <source src="videos/${p.video}" type="video/mp4">
+      <video muted playsinline loop preload="none" poster="pics/${p.filename}"
+             onerror="this.closest('.portfolio-item').classList.remove('has-video');this.remove()">
+        <source src="pics/${p.video}" type="video/mp4">
       </video>` : '';
 
     const month  = p.month  ? MONTHS[parseInt(p.month, 10) - 1] : '';
