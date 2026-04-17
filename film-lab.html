@@ -28,22 +28,6 @@
     </div>
   </div>
 
-  <!-- ── API KEY MODAL ── -->
-  <div id="api-key-modal" class="modal hidden">
-    <div class="modal-overlay" id="modal-overlay"></div>
-    <div class="modal-box">
-      <h2>Anthropic API Key</h2>
-      <p>Your key is stored only in your browser's local storage and is sent exclusively to Anthropic's API when
-        analyzing photos.</p>
-      <input type="password" id="api-key-input" placeholder="sk-ant-api03-…">
-      <div class="modal-actions">
-        <button id="cancel-api-key-btn" class="text-btn">Cancel</button>
-        <button id="save-api-key-btn" class="primary-btn">Save Key</button>
-      </div>
-      <p id="api-key-error" class="error-msg hidden">Please enter a valid API key.</p>
-    </div>
-  </div>
-
   <!-- ── MAIN APP ── -->
   <div id="app" class="hidden">
 
@@ -61,7 +45,6 @@
           <span id="classifier-text">Classifier offline</span>
         </span>
         <button id="removed-nav-btn" class="text-btn small hidden">Removed (<span id="removed-count">0</span>)</button>
-        <button id="change-api-key-btn" class="text-btn small">API Key</button>
         <button id="logout-btn" class="text-btn small">Logout</button>
       </div>
     </header>

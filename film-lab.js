@@ -4,16 +4,15 @@
 const PASSWORD_HASH = 'c6a31148a73f1db678218c65c55b395d76aa11d6b6c6407634f0399963b1af5e';
 
 const SESSION_KEY         = 'filmlab_auth';
-const API_KEY_STORE       = 'filmlab_api_key';
 const MODEL               = 'claude-sonnet-4-6';
 const CLASSIFIER_URL      = 'https://analog-image-classifier.onrender.com';
+const ANTHROPIC_PROXY     = `${CLASSIFIER_URL}/anthropic/messages`;
 const MIN_GOOD_CONFIDENCE = 0.65; // "good" below this confidence is treated as uncertain → removed
 
 // ── STATE ───────────────────────────────────────────────────────────────────
 
 let photos        = [];
 let removedPhotos = [];
-let apiKey        = '';
 let isAnalyzing   = false;
 let portfolioHTML = null;
 
@@ -107,11 +106,6 @@ const isLoggedIn  = () => sessionStorage.getItem(SESSION_KEY) === '1';
 const setLoggedIn = () => sessionStorage.setItem(SESSION_KEY, '1');
 const logout      = () => { sessionStorage.clear(); location.reload(); };
 
-// ── API KEY ─────────────────────────────────────────────────────────────────
-
-const storedKey = () => localStorage.getItem(API_KEY_STORE) || '';
-const saveKey   = k => { localStorage.setItem(API_KEY_STORE, k); apiKey = k; };
-
 // ── SYSTEM PROMPT ────────────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are Margot, a film photography instructor. Terse, direct, no flattery.
@@ -139,14 +133,9 @@ async function analyzePhotoWithClaude(dataUrl, classification = null) {
   const base64    = dataUrl.split(',')[1];
   const mediaType = dataUrl.split(';')[0].split(':')[1];
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch(ANTHROPIC_PROXY, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: MODEL,
       max_tokens: 600,
@@ -412,10 +401,6 @@ function togglePortfolio(id) {
 async function developRoll() {
   if (isAnalyzing) return;
 
-  const key = storedKey();
-  if (!key) { showApiKeyModal(true); return; }
-  apiKey = key;
-
   const pending = photos.filter(p => p.status !== 'done');
   if (!pending.length) return;
 
@@ -642,17 +627,13 @@ async function addToPortfolioFromRemoved(id) {
   const btn = document.getElementById(`recover-${id}`);
 
   if (!photo.analysis) {
-    const key = storedKey();
-    if (key) {
-      apiKey = key;
-      if (btn) { btn.disabled = true; btn.textContent = 'Analyzing…'; }
-      try {
-        const resized  = await resizeDataUrl(photo.dataUrl);
-        photo.analysis = await analyzePhotoWithClaude(resized, photo.classification ?? null);
-      } catch (e) {
-        console.warn('Could not analyze recovered photo:', e.message);
-        if (btn) { btn.disabled = false; btn.textContent = 'Recover to Portfolio'; }
-      }
+    if (btn) { btn.disabled = true; btn.textContent = 'Analyzing…'; }
+    try {
+      const resized  = await resizeDataUrl(photo.dataUrl);
+      photo.analysis = await analyzePhotoWithClaude(resized, photo.classification ?? null);
+    } catch (e) {
+      console.warn('Could not analyze recovered photo:', e.message);
+      if (btn) { btn.disabled = false; btn.textContent = 'Recover to Portfolio'; }
     }
   }
 
@@ -753,39 +734,11 @@ function downloadPortfolio() {
   URL.revokeObjectURL(url);
 }
 
-// ── API KEY MODAL ─────────────────────────────────────────────────────────────
-
-let pendingDevelopAfterKey = false;
-
-function showApiKeyModal(andDevelop = false) {
-  pendingDevelopAfterKey = andDevelop;
-  const modal = document.getElementById('api-key-modal');
-  modal.classList.remove('hidden');
-  const input = document.getElementById('api-key-input');
-  input.value = storedKey();
-  setTimeout(() => input.focus(), 60);
-}
-
-function hideApiKeyModal() {
-  document.getElementById('api-key-modal').classList.add('hidden');
-  document.getElementById('api-key-error').classList.add('hidden');
-}
-
-function handleSaveApiKey() {
-  const val = document.getElementById('api-key-input').value.trim();
-  if (!val) { document.getElementById('api-key-error').classList.remove('hidden'); return; }
-  saveKey(val);
-  hideApiKeyModal();
-  if (pendingDevelopAfterKey) { pendingDevelopAfterKey = false; developRoll(); }
-}
-
 // ── SHOW APP ──────────────────────────────────────────────────────────────────
 
 function showApp() {
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  apiKey = storedKey();
-  if (!apiKey) setTimeout(() => showApiKeyModal(false), 400);
   checkClassifierHealth().then(setClassifierStatus);
 }
 
@@ -827,7 +780,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('remove-flagged-btn')    .addEventListener('click', removeFlagged);
   document.getElementById('keep-portfolio-btn')    .addEventListener('click', keepPortfolioOnly);
   document.getElementById('logout-btn')            .addEventListener('click', logout);
-  document.getElementById('change-api-key-btn')    .addEventListener('click', () => showApiKeyModal(false));
   document.getElementById('export-portfolio-btn')  .addEventListener('click', exportPortfolio);
   document.getElementById('download-portfolio-btn').addEventListener('click', downloadPortfolio);
 
@@ -836,9 +788,4 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('back-to-roll-btn')   .addEventListener('click', showRollView);
   document.getElementById('clear-all-removed-btn').addEventListener('click', clearAllRemoved);
 
-  // API key modal
-  document.getElementById('save-api-key-btn')  .addEventListener('click', handleSaveApiKey);
-  document.getElementById('cancel-api-key-btn').addEventListener('click', hideApiKeyModal);
-  document.getElementById('modal-overlay')     .addEventListener('click', hideApiKeyModal);
-  document.getElementById('api-key-input')     .addEventListener('keydown', e => { if (e.key === 'Enter') handleSaveApiKey(); });
 });
