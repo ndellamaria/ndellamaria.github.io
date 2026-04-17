@@ -800,19 +800,22 @@ function refreshPortfolioCard(photo) {
 
 // ── LOCATION / DATE METADATA ─────────────────────────────────────────────────
 
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const [year, month] = dateStr.split('-');
-  const months = ['January','February','March','April','May','June','July',
-                  'August','September','October','November','December'];
-  return `${months[parseInt(month, 10) - 1]} ${year}`;
+const MONTHS = ['January','February','March','April','May','June','July',
+                'August','September','October','November','December'];
+
+function formatDate(photo) {
+  const m = photo.dateMonth;
+  const y = photo.dateYear;
+  if (!y && !m) return '';
+  if (m && y) return `${MONTHS[parseInt(m, 10) - 1]} ${y}`;
+  return y || MONTHS[parseInt(m, 10) - 1];
 }
 
 function updateMetaOverlay(card, photo) {
   const locEl  = card.querySelector('.meta-loc');
   const dateEl = card.querySelector('.meta-date-display');
   if (locEl)  locEl.textContent  = photo.location || '';
-  if (dateEl) dateEl.textContent = formatDate(photo.date);
+  if (dateEl) dateEl.textContent = formatDate(photo);
 }
 
 // ── ADD TO SITE ───────────────────────────────────────────────────────────────
@@ -863,14 +866,18 @@ function buildPortfolioCard(photo) {
       ${photo.animating ? '<div class="anim-overlay">Animating…</div>' : ''}
       <div class="photo-meta-overlay">
         <span class="meta-loc">${escapeHtml(photo.location || '')}</span>
-        <span class="meta-date-display">${formatDate(photo.date)}</span>
+        <span class="meta-date-display">${formatDate(photo)}</span>
       </div>
     </div>
     <div class="photo-card-body">
       <p class="photo-card-title">${escapeHtml(analysis?.title || photo.file.name)}</p>
       <div class="meta-inputs">
         <input type="text" class="meta-input meta-location-input" placeholder="Location" value="${escapeHtml(photo.location || '')}">
-        <input type="month" class="meta-input meta-date-input" value="${photo.date || ''}">
+        <select class="meta-input meta-month-input">
+          <option value="">Month</option>
+          ${MONTHS.map((m, i) => `<option value="${i + 1}"${photo.dateMonth == i + 1 ? ' selected' : ''}>${m}</option>`).join('')}
+        </select>
+        <input type="number" class="meta-input meta-year-input" placeholder="Year" min="1900" max="${new Date().getFullYear()}" value="${photo.dateYear || ''}" style="width:5.5rem;flex:none;">
       </div>
       <div class="card-actions">
         <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove</button>
@@ -906,8 +913,12 @@ function buildPortfolioCard(photo) {
     photo.location = e.target.value;
     updateMetaOverlay(div, photo);
   });
-  div.querySelector('.meta-date-input').addEventListener('input', e => {
-    photo.date = e.target.value;
+  div.querySelector('.meta-month-input').addEventListener('change', e => {
+    photo.dateMonth = e.target.value;
+    updateMetaOverlay(div, photo);
+  });
+  div.querySelector('.meta-year-input').addEventListener('input', e => {
+    photo.dateYear = e.target.value;
     updateMetaOverlay(div, photo);
   });
 

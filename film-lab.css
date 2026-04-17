@@ -856,9 +856,18 @@ input::placeholder {
 
 .meta-input::placeholder { color: var(--border-med); }
 
-input[type="month"].meta-input::-webkit-calendar-picker-indicator {
-  filter: invert(1) opacity(0.3);
+select.meta-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777772'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.3rem center;
+  padding-right: 1.4rem;
   cursor: pointer;
+}
+
+select.meta-input option {
+  background: #1e1e1d;
+  color: #e8e8e6;
 }
 
 /* ── ADD TO SITE ── */
