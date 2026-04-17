@@ -366,7 +366,7 @@ function setCardDone(photo) {
       </div>` : '';
 
   const clsBadge = photo.classification
-    ? `<span class="cls-badge cls-${photo.classification.class.replace(/_/g, '-')}">${CLASS_LABELS[photo.classification.class] || photo.classification.class} · ${Math.round(photo.classification.confidence * 100)}%</span>`
+    ? `<span class="cls-badge cls-${photo.classification.class.replace(/_/g, '-')}">${CLASS_LABELS[photo.classification.class] || photo.classification.class} · ${(photo.classification.confidence * 100).toFixed(2)}%</span>`
     : '';
 
   body.innerHTML = /* html */`
@@ -623,14 +623,14 @@ function buildRemovedCard(photo) {
   div.id = `removed-card-${photo.id}`;
 
   const clsBadge = photo.classification
-    ? `<span class="cls-badge cls-${photo.classification.class.replace(/_/g, '-')}">${CLASS_LABELS[photo.classification.class] || photo.classification.class} · ${Math.round(photo.classification.confidence * 100)}%</span>`
+    ? `<span class="cls-badge cls-${photo.classification.class.replace(/_/g, '-')}">${CLASS_LABELS[photo.classification.class] || photo.classification.class} · ${(photo.classification.confidence * 100).toFixed(2)}%</span>`
     : '';
 
   let reason = 'Removed';
   if (photo.status === 'removed-classifier' && photo.classification) {
     const label = CLASS_LABELS[photo.classification.class] || photo.classification.class;
     reason = photo.classification.class === 'good'
-      ? `Uncertain classifier result (${Math.round(photo.classification.confidence * 100)}% confidence)`
+      ? `Uncertain classifier result (${(photo.classification.confidence * 100).toFixed(2)}% confidence)`
       : `Removed by classifier — ${label}`;
   } else if (photo.status === 'removed-cleanup') {
     reason = 'Flagged and removed';
