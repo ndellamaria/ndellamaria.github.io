@@ -135,19 +135,56 @@ Respond with valid JSON only — no markdown, no extra text:
   }
 }`;
 
-const JUDGE_PROMPT = `You are a senior photo editor evaluating the quality of a film photography instructor's written analysis. Score the analysis itself — not the photo.
+// ── EVALUATION CRITERIA (loaded from evaluation-criteria.json at runtime) ────
 
-Criteria (1–5 each):
-- title: Specific and evocative to this exact frame (5) vs. generic or interchangeable (1)
-- feedback: Precise, causal, and actionable observation (5) vs. vague or obvious (1)
-- consistency: Technical notes clearly support the overall assessment (5) vs. contradictory or incomplete (1)
+let _criteriaCache = null;
+
+async function fetchEvaluationCriteria() {
+  if (_criteriaCache) return _criteriaCache;
+  try {
+    const res = await fetch('./evaluation-criteria.json', { cache: 'no-store' });
+    if (res.ok) _criteriaCache = await res.json();
+  } catch (e) {
+    console.warn('Could not load evaluation-criteria.json, using fallback:', e.message);
+  }
+  return _criteriaCache;
+}
+
+function buildJudgePrompt(criteria) {
+  if (!criteria) {
+    // Fallback if file unavailable
+    return `You are a senior photo editor evaluating a film photography instructor's analysis. Score the analysis — not the photo.
+Criteria (1–5 each): title (specific to this frame), feedback (precise and causal), consistency (notes support assessment).
+Respond with valid JSON only: { "scores": { "title": <int>, "feedback": <int>, "consistency": <int> }, "overall": <float>, "note": "<weakest element>", "flags": [] }`;
+  }
+
+  const criteriaBlock = criteria.criteria.map(c => {
+    const levels = Object.entries(c.levels)
+      .map(([score, desc]) => `    ${score}: ${desc}`)
+      .join('\n');
+    return `  ${c.name} (id: "${c.id}")\n  ${c.description}\n${levels}`;
+  }).join('\n\n');
+
+  const scoreFields = criteria.criteria.map(c => `"${c.id}": <int 1-5>`).join(', ');
+  const criteriaIds = criteria.criteria.map(c => `"${c.id}"`).join(', ');
+
+  return `You are a senior photo editor evaluating the quality of a film photography instructor's written analysis. Score the analysis — not the photo.
+
+Criteria loaded from evaluation-criteria.json (score each 1–5):
+
+${criteriaBlock}
+
+Passing threshold: ${criteria.passing_threshold}/5. Flag threshold: ${criteria.flag_threshold}/5.
+${criteria.improvement_rule}
 
 Respond with valid JSON only — no markdown:
 {
-  "scores": { "title": <int 1-5>, "feedback": <int 1-5>, "consistency": <int 1-5> },
-  "overall": <float, one decimal>,
-  "note": "<one sentence identifying the weakest element>"
+  "scores": { ${scoreFields} },
+  "overall": <float one decimal — unweighted average of all criteria>,
+  "note": "<one sentence identifying the single weakest element>",
+  "flags": [<criterion ids where score is at or below ${criteria.flag_threshold}, chosen from: ${criteriaIds}>]
 }`;
+}
 
 // ── CLAUDE API ───────────────────────────────────────────────────────────────
 
@@ -194,6 +231,9 @@ async function judgeAnalysis(photo) {
   const base64    = photo.dataUrl.split(',')[1];
   const mediaType = photo.dataUrl.split(';')[0].split(':')[1];
 
+  const criteria = await fetchEvaluationCriteria();
+  const prompt   = buildJudgePrompt(criteria);
+
   const context = `Instructor's analysis:
 Title: "${photo.analysis.title}"
 Feedback: "${photo.analysis.teacherFeedback}"
@@ -207,8 +247,8 @@ Composition: ${photo.analysis.technical?.composition || '—'}`;
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 200,
-        system: JUDGE_PROMPT,
+        max_tokens: 250,
+        system: prompt,
         messages: [{ role: 'user', content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
           { type: 'text', text: context }
@@ -221,6 +261,7 @@ Composition: ${photo.analysis.technical?.composition || '—'}`;
     if (!match) return;
     photo.judgeScore = JSON.parse(match[0]);
     updateCardJudge(photo);
+    showEvalReportBtn();
   } catch (e) {
     console.warn('Judge skipped:', e.message);
   }
@@ -229,11 +270,110 @@ Composition: ${photo.analysis.technical?.composition || '—'}`;
 function updateCardJudge(photo) {
   const el = document.getElementById(`judge-${photo.id}`);
   if (!el || !photo.judgeScore) return;
-  const { overall, note, scores } = photo.judgeScore;
+  const { overall, note, scores, flags = [] } = photo.judgeScore;
   const color = overall >= 4 ? '#4caf7d' : overall >= 3 ? '#c8a830' : '#e06060';
+  const tooltip = Object.entries(scores || {})
+    .map(([k, v]) => `${k}: ${v}/5`).join(' · ');
+  const flagBadge = flags.length
+    ? `<span class="judge-flag" title="Flagged: ${flags.join(', ')}">⚑</span>` : '';
   el.innerHTML = `
-    <span class="judge-score" style="color:${color}" title="Title ${scores.title}/5 · Feedback ${scores.feedback}/5 · Consistency ${scores.consistency}/5">${overall}/5</span>
+    <span class="judge-score" style="color:${color}" title="${tooltip}">${overall}/5</span>
+    ${flagBadge}
     <span class="judge-note">${escapeHtml(note)}</span>`;
+}
+
+function showEvalReportBtn() {
+  const btn = document.getElementById('eval-report-btn');
+  if (btn && photos.some(p => p.judgeScore)) btn.classList.remove('hidden');
+}
+
+// ── EVALUATION REPORT ────────────────────────────────────────────────────────
+
+function generateEvaluationReport() {
+  const criteria = _criteriaCache;
+  const judged   = photos.filter(p => p.judgeScore);
+  if (!judged.length) return;
+
+  const criteriaList  = criteria?.criteria || [
+    { id: 'title', name: 'Title Specificity' },
+    { id: 'feedback', name: 'Feedback Precision' },
+    { id: 'consistency', name: 'Internal Consistency' },
+  ];
+  const nameMap       = Object.fromEntries(criteriaList.map(c => [c.id, c.name]));
+  const passingThresh = criteria?.passing_threshold ?? 3.5;
+  const flagThresh    = criteria?.flag_threshold    ?? 3.0;
+
+  // Per-criterion averages
+  const avgScores = {};
+  criteriaList.forEach(({ id }) => {
+    const vals = judged.map(p => p.judgeScore.scores?.[id]).filter(v => v != null);
+    avgScores[id] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  });
+
+  const overallVals = judged.map(p => p.judgeScore.overall).filter(v => v != null);
+  const overallAvg  = overallVals.length
+    ? overallVals.reduce((a, b) => a + b, 0) / overallVals.length : null;
+
+  // Areas for improvement: criteria below passing threshold
+  const improvements = criteriaList
+    .filter(({ id }) => avgScores[id] != null && avgScores[id] < passingThresh)
+    .map(({ id, name, description }) => {
+      const flagged = judged.filter(p => (p.judgeScore.scores?.[id] ?? 5) <= flagThresh);
+      return {
+        criterion: name,
+        description,
+        average_score: avgScores[id]?.toFixed(1),
+        passing_threshold: passingThresh,
+        gap: (passingThresh - avgScores[id]).toFixed(1),
+        photos_flagged: flagged.map(p => ({
+          filename: p.file.name,
+          score: p.judgeScore.scores?.[id],
+          note: p.judgeScore.note,
+        })),
+      };
+    });
+
+  const report = {
+    title: 'Film Lab — Evaluation Report',
+    criteria_source: 'evaluation-criteria.json',
+    generated: new Date().toISOString(),
+
+    summary: {
+      photos_analyzed:      photos.length,
+      photos_with_scores:   judged.length,
+      overall_average:      overallAvg != null ? `${overallAvg.toFixed(1)}/5` : '—',
+      criterion_averages:   Object.fromEntries(
+        criteriaList.map(({ id, name }) => [name, avgScores[id] != null ? `${avgScores[id].toFixed(1)}/5` : '—'])
+      ),
+      passing_threshold:    `${passingThresh}/5`,
+      flag_threshold:       `${flagThresh}/5`,
+      photos_below_flag:    judged.filter(p => p.judgeScore.overall <= flagThresh).length,
+    },
+
+    areas_for_improvement: improvements.length > 0
+      ? improvements
+      : [{ message: 'All criteria meet or exceed the passing threshold.' }],
+
+    per_photo_evaluations: judged.map(p => ({
+      filename:         p.file.name,
+      instructor_title: p.analysis?.title || '',
+      overall:          p.judgeScore.overall,
+      scores:           Object.fromEntries(
+        Object.entries(p.judgeScore.scores || {}).map(([id, v]) => [nameMap[id] || id, v])
+      ),
+      flags:            (p.judgeScore.flags || []).map(id => nameMap[id] || id),
+      note:             p.judgeScore.note,
+    })),
+  };
+
+  const json = JSON.stringify(report, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  Object.assign(document.createElement('a'), {
+    href: url,
+    download: `film-lab-evaluation-${new Date().toISOString().slice(0, 10)}.json`,
+  }).click();
+  URL.revokeObjectURL(url);
 }
 
 // ── PORTFOLIO HTML GENERATOR ─────────────────────────────────────────────────
@@ -1173,6 +1313,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('add-more-btn')          .addEventListener('click', () => fileInput.click());
   document.getElementById('clear-btn')             .addEventListener('click', clearAll);
   document.getElementById('keep-portfolio-btn')    .addEventListener('click', keepPortfolioOnly);
+  document.getElementById('eval-report-btn')       .addEventListener('click', generateEvaluationReport);
   document.getElementById('logout-btn')            .addEventListener('click', logout);
   document.getElementById('export-portfolio-btn')  .addEventListener('click', exportPortfolio);
   document.getElementById('download-portfolio-btn').addEventListener('click', downloadPortfolio);

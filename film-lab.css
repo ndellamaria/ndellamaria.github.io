@@ -828,6 +828,13 @@ input::placeholder {
   letter-spacing: 0.03em;
 }
 
+.judge-flag {
+  font-size: 9pt;
+  color: #e06060;
+  flex-shrink: 0;
+  cursor: default;
+}
+
 /* ── PHOTO META OVERLAY (location / date on hover) ── */
 
 .photo-meta-overlay {

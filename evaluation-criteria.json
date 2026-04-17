@@ -1,0 +1,50 @@
+{
+  "version": "1.0",
+  "domain": "Film Photography Curation",
+  "agent": "Film Lab Instructor (claude-sonnet-4-6)",
+  "description": "Rubric used by the Judge LLM to evaluate the quality of Film Lab's per-photo analysis outputs. Edit this file to change how quality is measured — the Judge reads it at runtime.",
+  "criteria": [
+    {
+      "id": "title",
+      "name": "Title Specificity",
+      "description": "Is the title specific and evocative to this exact frame, or generic and interchangeable?",
+      "weight": 1,
+      "levels": {
+        "1": "Generic — could apply to any photograph (e.g. 'Golden Light', 'Morning Mist')",
+        "2": "Slightly specific but still interchangeable with similar photos",
+        "3": "References a recognizable element of the photo but lacks originality",
+        "4": "Evocative and clearly tied to something unique in this frame",
+        "5": "Poetic and unexpected — could only belong to this particular image"
+      }
+    },
+    {
+      "id": "feedback",
+      "name": "Feedback Precision",
+      "description": "Is the technical feedback precise, causal, and actionable — or vague and obvious?",
+      "weight": 1,
+      "levels": {
+        "1": "Vague or obvious — adds no value beyond looking at the photo",
+        "2": "Names a technical issue but without identifying cause or offering direction",
+        "3": "Specific observation, partially identifies cause",
+        "4": "Precise — identifies cause, effect, and implies a corrective direction",
+        "5": "Surgical — names exact technical cause, its effect on the image, and a clear improvement path"
+      }
+    },
+    {
+      "id": "consistency",
+      "name": "Internal Consistency",
+      "description": "Do the technical notes (exposure, lighting, composition) align with and support the overall teacherFeedback?",
+      "weight": 1,
+      "levels": {
+        "1": "Technical notes directly contradict the feedback",
+        "2": "Partially aligned — at least one note contradicts or undermines the feedback",
+        "3": "Mostly consistent with minor gaps or redundancy",
+        "4": "Well-aligned — each note contributes to a coherent assessment",
+        "5": "Perfectly consistent — title, feedback, and technical notes form a single unified critique"
+      }
+    }
+  ],
+  "passing_threshold": 3.5,
+  "flag_threshold": 3.0,
+  "improvement_rule": "Any criterion with an average score below passing_threshold should be listed as an area for improvement in the evaluation report. Photos scoring below flag_threshold on any criterion should be individually flagged."
+}
