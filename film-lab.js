@@ -9,7 +9,10 @@ const SESSION_KEY         = 'filmlab_auth';
 const MODEL               = 'claude-sonnet-4-6';
 const CLASSIFIER_URL      = 'https://analog-image-classifier.onrender.com';
 const ANTHROPIC_PROXY     = `${CLASSIFIER_URL}/anthropic/messages`;
+const RUNWAY_PROXY        = `${CLASSIFIER_URL}/runway`;
 const MIN_GOOD_CONFIDENCE = 0.65; // "good" below this confidence is treated as uncertain → removed
+
+const SERENE_PROMPT = 'Barely perceptible, dreamlike movement — soft breeze through foliage, gentle light drift, slow cloud or water surface motion. Preserve film grain, color palette, and composition exactly. 5 seconds, 24fps, seamless loop. Serene, meditative, cinematic.';
 
 // ── STATE ───────────────────────────────────────────────────────────────────
 
@@ -496,6 +499,11 @@ async function developRoll() {
   isAnalyzing = false; btn.disabled = false; btn.textContent = 'Develop Roll →';
   updateRollButtons();
   renderPortfolioSection();
+
+  // Auto-animate ~30% of portfolio picks
+  const picks = photos.filter(p => p.inPortfolio);
+  const count = Math.max(1, Math.round(picks.length * 0.3));
+  [...picks].sort(() => Math.random() - 0.5).slice(0, count).forEach(p => animatePhoto(p));
 }
 
 function showFilterNotice(removed) {
@@ -670,6 +678,72 @@ function clearAllRemoved() {
   updateRemovedNav();
 }
 
+// ── ANIMATION ────────────────────────────────────────────────────────────────
+
+async function animatePhoto(photo) {
+  photo.animating = true;
+  photo.animationError = null;
+  refreshPortfolioCard(photo);
+
+  try {
+    const genRes = await fetch(`${RUNWAY_PROXY}/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt_image: photo.dataUrl, prompt_text: SERENE_PROMPT })
+    });
+    if (!genRes.ok) throw new Error(`Runway error ${genRes.status}`);
+    const { task_id, error } = await genRes.json();
+    if (error) throw new Error(error);
+
+    for (let i = 0; i < 72; i++) {
+      await new Promise(r => setTimeout(r, 10000));
+      const poll   = await fetch(`${RUNWAY_PROXY}/task/${task_id}`);
+      const status = await poll.json();
+      if (status.status === 'SUCCEEDED') {
+        photo.videoUrl  = status.video_url;
+        photo.animating = false;
+        refreshPortfolioCard(photo);
+        return;
+      }
+      if (status.status === 'FAILED') throw new Error(status.error || 'Animation failed');
+    }
+    throw new Error('Animation timed out');
+  } catch (err) {
+    photo.animating      = false;
+    photo.animationError = err.message;
+    refreshPortfolioCard(photo);
+  }
+}
+
+function unAnimatePhoto(photo) {
+  photo.videoUrl       = null;
+  photo.animationError = null;
+  refreshPortfolioCard(photo);
+}
+
+function refreshPortfolioCard(photo) {
+  const card = document.getElementById(`pf-card-${photo.id}`);
+  if (!card) return;
+
+  const imgWrap = card.querySelector('.photo-card-img-wrap');
+  const animBtn = card.querySelector('.animate-btn');
+
+  if (photo.videoUrl) {
+    imgWrap.innerHTML = `<video autoplay loop muted playsinline src="${photo.videoUrl}" style="width:100%;display:block;"></video>`;
+    if (animBtn) { animBtn.textContent = 'Un-animate'; animBtn.classList.add('animated'); animBtn.disabled = false; }
+  } else if (photo.animating) {
+    imgWrap.innerHTML = `<img src="${photo.dataUrl}" alt=""><div class="anim-overlay">Animating…</div>`;
+    if (animBtn) { animBtn.textContent = 'Animating…'; animBtn.disabled = true; animBtn.classList.remove('animated'); }
+  } else {
+    imgWrap.innerHTML = `<img src="${photo.dataUrl}" alt="${escapeHtml(photo.analysis?.title || photo.file.name)}">`;
+    if (animBtn) {
+      animBtn.textContent = photo.animationError ? 'Retry' : 'Animate';
+      animBtn.disabled = false;
+      animBtn.classList.remove('animated');
+    }
+  }
+}
+
 // ── PORTFOLIO SECTION ─────────────────────────────────────────────────────────
 
 function renderPortfolioSection() {
@@ -692,14 +766,27 @@ function buildPortfolioCard(photo) {
   const { analysis } = photo;
   const div = document.createElement('div');
   div.className = 'photo-card portfolio-pick';
+  div.id = `pf-card-${photo.id}`;
+
+  const mediaHtml = photo.videoUrl
+    ? `<video autoplay loop muted playsinline src="${photo.videoUrl}" style="width:100%;display:block;"></video>`
+    : `<img src="${photo.dataUrl}" alt="${escapeHtml(analysis?.title || photo.file.name)}">`;
+
+  const animBtnText = photo.animating ? 'Animating…' : photo.videoUrl ? 'Un-animate' : 'Animate';
+
   div.innerHTML = /* html */`
     <div class="photo-card-img-wrap">
-      <img src="${photo.dataUrl}" alt="${escapeHtml(analysis?.title || photo.file.name)}">
+      ${mediaHtml}
+      ${photo.animating ? '<div class="anim-overlay">Animating…</div>' : ''}
     </div>
     <div class="photo-card-body">
       <p class="photo-card-title">${escapeHtml(analysis?.title || photo.file.name)}</p>
-      <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove from Portfolio</button>
+      <div class="card-actions">
+        <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove from Portfolio</button>
+        <button class="animate-btn${photo.videoUrl ? ' animated' : ''}" ${photo.animating ? 'disabled' : ''} data-id="${photo.id}">${animBtnText}</button>
+      </div>
     </div>`;
+
   div.querySelector('.portfolio-toggle').addEventListener('click', () => {
     photo.inPortfolio = false;
     const mainBtn = document.getElementById(`toggle-${photo.id}`);
@@ -707,6 +794,9 @@ function buildPortfolioCard(photo) {
     document.getElementById(`card-${photo.id}`)?.classList.remove('portfolio-pick');
     renderPortfolioSection();
     updateRollButtons();
+  });
+  div.querySelector('.animate-btn').addEventListener('click', () => {
+    photo.videoUrl ? unAnimatePhoto(photo) : animatePhoto(photo);
   });
   return div;
 }

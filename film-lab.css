@@ -752,6 +752,44 @@ input::placeholder {
 }
 
 
+/* ── ANIMATION ── */
+
+.anim-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 10.5pt;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.animate-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 10pt;
+  font-weight: 300;
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.animate-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.animate-btn:disabled { opacity: 0.5; cursor: default; }
+
+.animate-btn.animated {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ── REMOVED VIEW ── */
 
 .removed-reason {
