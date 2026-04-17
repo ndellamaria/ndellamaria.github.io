@@ -642,14 +642,6 @@ input::placeholder {
   to { transform: rotate(360deg); }
 }
 
-/* ── FLAGGED CARD ── */
-
-.photo-card.flagged {
-  opacity: 0.35;
-  border-top-color: #b00;
-  transition: opacity 0.3s, border-color 0.3s;
-}
-
 /* ── CLASSIFIER STATUS ── */
 
 .classifier-status {
@@ -759,27 +751,6 @@ input::placeholder {
   flex: 1;
 }
 
-.flag-toggle {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  color: var(--text-dim);
-  font-family: var(--font);
-  font-size: 10pt;
-  font-weight: 300;
-  padding: 0.5rem 0.65rem;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
-}
-
-.flag-toggle:hover { border-color: #b00; color: #b00; }
-
-.flag-toggle.flagged {
-  border-color: #b00;
-  color: #b00;
-  background: rgba(180, 0, 0, 0.04);
-}
 
 /* ── REMOVED VIEW ── */
 

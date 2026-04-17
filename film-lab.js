@@ -348,7 +348,6 @@ function setCardDone(photo) {
   if (!card) return;
 
   if (photo.inPortfolio) card.classList.add('portfolio-pick');
-  if (photo.flagged)     card.classList.add('flagged');
 
   const badge = document.getElementById(`status-${photo.id}`);
   if (badge) badge.className = 'status-badge status-done';
@@ -392,13 +391,9 @@ function setCardDone(photo) {
       <button class="portfolio-toggle${photo.inPortfolio ? ' in-portfolio' : ''}" id="toggle-${photo.id}">
         ${photo.inPortfolio ? '★ In Portfolio' : '+ Add to Portfolio'}
       </button>
-      <button class="flag-toggle${photo.flagged ? ' flagged' : ''}" id="flag-${photo.id}" title="Flag for removal">
-        ${photo.flagged ? '🚩' : 'Flag'}
-      </button>
     </div>`;
 
   body.querySelector('.portfolio-toggle').addEventListener('click', () => togglePortfolio(photo.id));
-  body.querySelector('.flag-toggle').addEventListener('click', () => toggleFlag(photo.id));
 }
 
 function setCardError(photo, message) {
@@ -410,20 +405,7 @@ function setCardError(photo, message) {
     <p class="error-msg" style="padding:0.75rem 0;">${escapeHtml(message)}</p>`;
 }
 
-// ── FLAG / PORTFOLIO TOGGLES ──────────────────────────────────────────────────
-
-function toggleFlag(id) {
-  const photo = photos.find(p => p.id === id);
-  if (!photo || photo.status !== 'done') return;
-
-  photo.flagged = !photo.flagged;
-  document.getElementById(`card-${id}`)?.classList.toggle('flagged', photo.flagged);
-
-  const btn = document.getElementById(`flag-${id}`);
-  if (btn) { btn.textContent = photo.flagged ? '🚩' : 'Flag'; btn.classList.toggle('flagged', photo.flagged); }
-
-  updateRollButtons();
-}
+// ── PORTFOLIO TOGGLE ──────────────────────────────────────────────────────────
 
 function togglePortfolio(id) {
   const photo = photos.find(p => p.id === id);
@@ -534,29 +516,10 @@ function showFilterNotice(removed) {
 // ── ROLL BUTTONS ──────────────────────────────────────────────────────────────
 
 function updateRollButtons() {
-  const flagged      = photos.filter(p => p.flagged);
   const hasPortfolio = photos.some(p => p.inPortfolio);
   const hasNonPortfolioAnalyzed = photos.some(p => !p.inPortfolio && p.status === 'done');
-
-  const removeBtn  = document.getElementById('remove-flagged-btn');
-  const keepBtn    = document.getElementById('keep-portfolio-btn');
-
-  removeBtn.classList.toggle('hidden', flagged.length === 0);
-  if (flagged.length > 0) removeBtn.textContent = `Remove flagged (${flagged.length})`;
-
+  const keepBtn = document.getElementById('keep-portfolio-btn');
   keepBtn.classList.toggle('hidden', !hasPortfolio || !hasNonPortfolioAnalyzed);
-}
-
-function removeFlagged() {
-  const flagged = photos.filter(p => p.flagged);
-  flagged.forEach(p => {
-    photos = photos.filter(x => x.id !== p.id);
-    document.getElementById(`card-${p.id}`)?.remove();
-    p.status = 'removed-cleanup';
-    removedPhotos.push(p);
-  });
-  updateCount();
-  updateRollButtons();
   updateRemovedNav();
   renderRemovedView();
   renderPortfolioSection();
@@ -690,7 +653,6 @@ async function addToPortfolioFromRemoved(id) {
 
   photo.status      = 'done';
   photo.inPortfolio = true;
-  photo.flagged     = false;
   photos.push(photo);
 
   updateRemovedNav();
@@ -827,7 +789,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filter-notice-dismiss') .addEventListener('click', () => document.getElementById('filter-notice').classList.add('hidden'));
   document.getElementById('add-more-btn')          .addEventListener('click', () => fileInput.click());
   document.getElementById('clear-btn')             .addEventListener('click', clearAll);
-  document.getElementById('remove-flagged-btn')    .addEventListener('click', removeFlagged);
   document.getElementById('keep-portfolio-btn')    .addEventListener('click', keepPortfolioOnly);
   document.getElementById('logout-btn')            .addEventListener('click', logout);
   document.getElementById('export-portfolio-btn')  .addEventListener('click', exportPortfolio);
