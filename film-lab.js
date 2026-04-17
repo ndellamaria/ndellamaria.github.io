@@ -1085,18 +1085,6 @@ const MONTHS = ['January','February','March','April','May','June','July',
 
 // ── ADD TO SITE ───────────────────────────────────────────────────────────────
 
-async function fetchVideoAsBase64(url) {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onload = e => resolve(e.target.result.split(',')[1]);
-      reader.readAsDataURL(blob);
-    });
-  } catch { return null; }
-}
 
 function updateSiteSelectionBtn() {
   const n   = photos.filter(p => p.inPortfolio && p.selectedForSite).length;
@@ -1223,22 +1211,14 @@ async function addSelectedToSite() {
     status.innerHTML = '';
 
     try {
-      // Fetch videos client-side before uploading
-      const photoPayloads = await Promise.all(newEntries.map(async ({ photo, safeName, videoFilename }) => {
-        let video_base64 = null;
-        if (photo.videoUrl) {
-          prBtn.textContent = `Fetching video…`;
-          video_base64 = await fetchVideoAsBase64(photo.videoUrl);
-        }
-        return {
-          image_base64:   photo.dataUrl.split(',')[1],
-          filename:       safeName,
-          video_base64,
-          video_filename: video_base64 ? videoFilename : null,
-          meta: {
-            title: photo.analysis?.title || '',
-          },
-        };
+      const photoPayloads = newEntries.map(({ photo, safeName, videoFilename }) => ({
+        image_base64:   photo.dataUrl.split(',')[1],
+        filename:       safeName,
+        video_url:      photo.videoUrl || null,
+        video_filename: photo.videoUrl ? videoFilename : null,
+        meta: {
+          title: photo.analysis?.title || '',
+        },
       }));
 
       prBtn.textContent = 'Opening PR…';
