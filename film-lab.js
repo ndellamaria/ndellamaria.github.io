@@ -277,9 +277,14 @@ async function addFiles(fileList) {
 }
 
 function removePhoto(id) {
+  const photo = photos.find(p => p.id === id);
+  if (!photo) return;
   photos = photos.filter(p => p.id !== id);
   document.getElementById(`card-${id}`)?.remove();
+  photo.status = 'removed-manual';
+  removedPhotos.push(photo);
   updateCount();
+  updateRemovedNav();
   if (photos.length === 0) document.getElementById('photos-section').classList.add('hidden');
 }
 
@@ -629,6 +634,8 @@ function buildRemovedCard(photo) {
       : `Removed by classifier — ${label}`;
   } else if (photo.status === 'removed-cleanup') {
     reason = 'Flagged and removed';
+  } else if (photo.status === 'removed-manual') {
+    reason = 'Manually removed';
   }
 
   const feedbackLine = photo.analysis?.teacherFeedback
