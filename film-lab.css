@@ -792,6 +792,42 @@ input::placeholder {
   color: var(--accent);
 }
 
+/* ── JUDGE SCORE ── */
+
+.judge-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.judge-score {
+  font-size: 9pt;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.judge-note {
+  font-size: 9pt;
+  font-weight: 300;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.judge-loading {
+  font-size: 9pt;
+  font-weight: 300;
+  color: var(--border-med);
+  font-style: italic;
+  letter-spacing: 0.03em;
+}
+
 /* ── PHOTO META OVERLAY (location / date on hover) ── */
 
 .photo-meta-overlay {

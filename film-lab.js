@@ -135,6 +135,20 @@ Respond with valid JSON only — no markdown, no extra text:
   }
 }`;
 
+const JUDGE_PROMPT = `You are a senior photo editor evaluating the quality of a film photography instructor's written analysis. Score the analysis itself — not the photo.
+
+Criteria (1–5 each):
+- title: Specific and evocative to this exact frame (5) vs. generic or interchangeable (1)
+- feedback: Precise, causal, and actionable observation (5) vs. vague or obvious (1)
+- consistency: Technical notes clearly support the overall assessment (5) vs. contradictory or incomplete (1)
+
+Respond with valid JSON only — no markdown:
+{
+  "scores": { "title": <int 1-5>, "feedback": <int 1-5>, "consistency": <int 1-5> },
+  "overall": <float, one decimal>,
+  "note": "<one sentence identifying the weakest element>"
+}`;
+
 // ── CLAUDE API ───────────────────────────────────────────────────────────────
 
 async function analyzePhotoWithClaude(dataUrl, classification = null) {
@@ -173,6 +187,53 @@ async function analyzePhotoWithClaude(dataUrl, classification = null) {
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not parse response from instructor.');
   return JSON.parse(match[0]);
+}
+
+async function judgeAnalysis(photo) {
+  if (!photo.analysis) return;
+  const base64    = photo.dataUrl.split(',')[1];
+  const mediaType = photo.dataUrl.split(';')[0].split(':')[1];
+
+  const context = `Instructor's analysis:
+Title: "${photo.analysis.title}"
+Feedback: "${photo.analysis.teacherFeedback}"
+Exposure: ${photo.analysis.technical?.exposure || '—'}
+Lighting: ${photo.analysis.technical?.lighting || '—'}
+Composition: ${photo.analysis.technical?.composition || '—'}`;
+
+  try {
+    const res = await fetch(ANTHROPIC_PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 200,
+        system: JUDGE_PROMPT,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+          { type: 'text', text: context }
+        ]}]
+      })
+    });
+    if (!res.ok) return;
+    const data  = await res.json();
+    const match = data.content[0].text.match(/\{[\s\S]*\}/);
+    if (!match) return;
+    photo.judgeScore = JSON.parse(match[0]);
+    updateCardJudge(photo);
+  } catch (e) {
+    console.warn('Judge skipped:', e.message);
+  }
+}
+
+function updateCardJudge(photo) {
+  const el = document.getElementById(`judge-${photo.id}`);
+  if (!el || !photo.judgeScore) return;
+  const { overall, note, scores } = photo.judgeScore;
+  const color = overall >= 4 ? '#4caf7d' : overall >= 3 ? '#c8a830' : '#e06060';
+  el.innerHTML = `
+    <span class="judge-score" style="color:${color}" title="Title ${scores.title}/5 · Feedback ${scores.feedback}/5 · Consistency ${scores.consistency}/5">${overall}/5</span>
+    <span class="judge-note">${escapeHtml(note)}</span>`;
 }
 
 // ── PORTFOLIO HTML GENERATOR ─────────────────────────────────────────────────
@@ -400,6 +461,9 @@ function setCardDone(photo) {
       <button class="portfolio-toggle${photo.inPortfolio ? ' in-portfolio' : ''}" id="toggle-${photo.id}">
         ${photo.inPortfolio ? '★ In Portfolio' : '+ Add to Portfolio'}
       </button>
+    </div>
+    <div class="judge-row" id="judge-${photo.id}">
+      <span class="judge-loading">Peer reviewing…</span>
     </div>`;
 
   body.querySelector('.portfolio-toggle').addEventListener('click', () => togglePortfolio(photo.id));
@@ -495,6 +559,7 @@ async function developRoll() {
       photo.analysis = await analyzePhotoWithClaude(resized, photo.classification ?? null);
       photo.status   = 'done';
       setCardDone(photo);
+      judgeAnalysis(photo); // fire-and-forget: updates card when ready
     } catch (err) {
       photo.status = 'error';
       setCardError(photo, err.message || 'Analysis failed.');
@@ -654,6 +719,7 @@ async function addToPortfolioFromRemoved(id) {
     try {
       const resized  = await resizeDataUrl(photo.dataUrl);
       photo.analysis = await analyzePhotoWithClaude(resized, photo.classification ?? null);
+      judgeAnalysis(photo);
     } catch (e) {
       console.warn('Could not analyze recovered photo:', e.message);
       if (btn) { btn.disabled = false; btn.textContent = 'Recover to Portfolio'; }
