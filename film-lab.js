@@ -985,7 +985,7 @@ function createSeamlessVideo(src) {
       const next = makeVideo();
       next.style.cssText += 'position:absolute;inset:0;opacity:0;';
       wrap.appendChild(next);
-      next.play();
+      next.play().catch(() => {});
 
       requestAnimationFrame(() => {
         next.style.transition    = `opacity ${XFADE}s ease`;
@@ -1004,7 +1004,7 @@ function createSeamlessVideo(src) {
 
   const first = makeVideo();
   wrap.appendChild(first);
-  first.play();
+  first.play().catch(() => {});
   attachLoop(first);
   return wrap;
 }
