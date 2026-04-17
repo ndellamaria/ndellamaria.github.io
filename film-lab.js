@@ -119,11 +119,14 @@ For each photo give brief technical notes only — one phrase per category, plai
 
 title is abstract and opaque — a fragment, a feeling, a word. Never literal or descriptive of the subject.
 
+animatable: true if the photo contains NO people and the subject (nature, landscape, sky, water, foliage, architecture) would benefit from subtle looping motion. false for portraits, group shots, or subjects where motion would look unnatural.
+
 Respond with valid JSON only — no markdown, no extra text:
 
 {
   "title": "<abstract title>",
   "teacherFeedback": "<1–2 sentences of direct technical observation>",
+  "animatable": true,
   "technical": {
     "exposure": "<one phrase>",
     "lighting": "<one phrase>",
@@ -500,10 +503,8 @@ async function developRoll() {
   updateRollButtons();
   renderPortfolioSection();
 
-  // Auto-animate ~30% of portfolio picks
-  const picks = photos.filter(p => p.inPortfolio);
-  const count = Math.max(1, Math.round(picks.length * 0.3));
-  [...picks].sort(() => Math.random() - 0.5).slice(0, count).forEach(p => animatePhoto(p));
+  // Auto-animate portfolio picks Claude flagged as suitable (no people, nature/landscape content)
+  photos.filter(p => p.inPortfolio && p.analysis?.animatable === true).forEach(p => animatePhoto(p));
 }
 
 function showFilterNotice(removed) {
