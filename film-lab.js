@@ -1078,20 +1078,7 @@ function refreshPortfolioCard(photo) {
 const MONTHS = ['January','February','March','April','May','June','July',
                 'August','September','October','November','December'];
 
-function formatDate(photo) {
-  const m = photo.dateMonth;
-  const y = photo.dateYear;
-  if (!y && !m) return '';
-  if (m && y) return `${MONTHS[parseInt(m, 10) - 1]} ${y}`;
-  return y || MONTHS[parseInt(m, 10) - 1];
-}
 
-function updateMetaOverlay(card, photo) {
-  const locEl  = card.querySelector('.meta-loc');
-  const dateEl = card.querySelector('.meta-date-display');
-  if (locEl)  locEl.textContent  = photo.location || '';
-  if (dateEl) dateEl.textContent = formatDate(photo);
-}
 
 // ── ADD TO SITE ───────────────────────────────────────────────────────────────
 
@@ -1120,8 +1107,6 @@ function updateSiteSelectionBtn() {
 // newPhotoMap : Map<filename, filmLabPhoto> for new photos (provides dataUrl + videoUrl)
 function buildSitePreviewHTML(allEntries, newPhotoMap) {
   const SITE = window.location.origin;
-  const MO   = ['January','February','March','April','May','June','July',
-                 'August','September','October','November','December'];
 
   const items = allEntries.map(p => {
     const filmPhoto = newPhotoMap.get(p.filename);
@@ -1132,24 +1117,14 @@ function buildSitePreviewHTML(allEntries, newPhotoMap) {
       ? (filmPhoto.videoUrl || null)
       : (p.video ? `${SITE}/videos/${encodeURIComponent(p.video)}` : null);
 
-    const month  = p.month ? MO[parseInt(p.month, 10) - 1] : '';
-    const date   = [month, p.year].filter(Boolean).join(' ');
-
-    const overlayContent = p.location || date
-      ? `${p.location ? `<div class="overlay-location">${p.location}</div>` : ''}${date ? `<div class="overlay-date">${date}</div>` : ''}`
-      : '';
-    const overlay = overlayContent ? `<div class="overlay">${overlayContent}</div>` : '';
-
     if (videoSrc) {
       return `<div class="portfolio-item">
   <img src="${imgSrc}" alt="${p.alt || ''}">
   <video autoplay muted loop playsinline src="${videoSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
-  ${overlay}
 </div>`;
     }
     return `<div class="portfolio-item">
   <img src="${imgSrc}" alt="${p.alt || ''}">
-  ${overlay}
 </div>`;
   }).join('\n');
 
@@ -1173,9 +1148,6 @@ body.ready{opacity:1}
 .portfolio-item{break-inside:avoid;margin-bottom:1.5rem;position:relative;overflow:hidden;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);display:inline-block;width:100%;background:#000}
 .portfolio-item img{width:100%;height:auto;display:block}
 .portfolio-item video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;padding:2rem 1rem .85rem;pointer-events:none;z-index:1}
-.overlay-location{font-size:11pt;font-weight:300}
-.overlay-date{font-size:9.5pt;font-weight:300;opacity:.7;margin-top:.1rem}
 </style>
 <script>
 window.addEventListener('load', () => {
@@ -1226,9 +1198,6 @@ async function addSelectedToSite() {
         filename: safeName,
         alt:      p.analysis?.title || safeName,
         video:    videoFilename,
-        location: p.location  || '',
-        month:    p.dateMonth || '',
-        year:     p.dateYear  || '',
       },
       photo: p,
       safeName,
@@ -1264,10 +1233,7 @@ async function addSelectedToSite() {
           video_base64,
           video_filename: video_base64 ? videoFilename : null,
           meta: {
-            title:    photo.analysis?.title || '',
-            location: photo.location  || '',
-            month:    photo.dateMonth || '',
-            year:     photo.dateYear  || '',
+            title: photo.analysis?.title || '',
           },
         };
       }));
@@ -1320,21 +1286,9 @@ function buildPortfolioCard(photo) {
   div.innerHTML = /* html */`
     <div class="photo-card-img-wrap">
       ${photo.animating ? '<div class="anim-overlay">Animating…</div>' : ''}
-      <div class="photo-meta-overlay">
-        <span class="meta-loc">${escapeHtml(photo.location || '')}</span>
-        <span class="meta-date-display">${formatDate(photo)}</span>
-      </div>
     </div>
     <div class="photo-card-body">
       <p class="photo-card-title">${escapeHtml(analysis?.title || photo.file.name)}</p>
-      <div class="meta-inputs">
-        <input type="text" class="meta-input meta-location-input" placeholder="Location" value="${escapeHtml(photo.location || '')}">
-        <select class="meta-input meta-month-input">
-          <option value="">Month</option>
-          ${MONTHS.map((m, i) => `<option value="${i + 1}"${photo.dateMonth == i + 1 ? ' selected' : ''}>${m}</option>`).join('')}
-        </select>
-        <input type="number" class="meta-input meta-year-input" placeholder="Year" min="1900" max="${new Date().getFullYear()}" value="${photo.dateYear || ''}" style="width:5.5rem;flex:none;">
-      </div>
       <div class="card-actions">
         <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove</button>
         <button class="animate-btn${photo.videoUrl ? ' animated' : ''}" ${photo.animating ? 'disabled' : ''} data-id="${photo.id}">${animBtnText}</button>
@@ -1371,18 +1325,6 @@ function buildPortfolioCard(photo) {
     updateSiteSelectionBtn();
   });
 
-  div.querySelector('.meta-location-input').addEventListener('input', e => {
-    photo.location = e.target.value;
-    updateMetaOverlay(div, photo);
-  });
-  div.querySelector('.meta-month-input').addEventListener('change', e => {
-    photo.dateMonth = e.target.value;
-    updateMetaOverlay(div, photo);
-  });
-  div.querySelector('.meta-year-input').addEventListener('input', e => {
-    photo.dateYear = e.target.value;
-    updateMetaOverlay(div, photo);
-  });
 
   return div;
 }

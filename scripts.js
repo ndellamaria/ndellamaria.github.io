@@ -19,17 +19,9 @@ async function renderPortfolio() {
         <source src="videos/${p.video}" type="video/mp4">
       </video>` : '';
 
-    const month  = p.month  ? MONTHS[parseInt(p.month, 10) - 1] : '';
-    const date   = [month, p.year].filter(Boolean).join(' ');
-    const overlayHtml = (p.location || date) ? `
-      <div class="overlay">
-        ${p.location ? `<div class="overlay-location">${p.location}</div>` : ''}
-        ${date ? `<div class="overlay-date">${date}</div>` : ''}
-      </div>` : '';
-
     return `<div class="portfolio-item${hasVideo ? ' has-video' : ''}">
   <img src="pics/${p.filename}" alt="${p.alt || ''}" ${orientation}>
-  ${videoHtml}${overlayHtml}
+  ${videoHtml}
 </div>`;
   }).join('\n');
 

@@ -262,40 +262,6 @@ body {
   opacity: 0;
 }
 
-/* Overlay styles */
-.portfolio-item .overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
-  color: white;
-  padding: 2rem 1rem 0.85rem;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.portfolio-item:hover .overlay {
-  opacity: 1;
-}
-
-.overlay-location {
-  font-size: 11pt;
-  font-weight: 300;
-}
-
-.overlay-date {
-  font-size: 9.5pt;
-  font-weight: 300;
-  opacity: 0.7;
-  margin-top: 0.1rem;
-}
-
-.portfolio-item:hover .overlay {
-  transform: translateY(0);
-}
 
 /* Loading animation */
 .portfolio-item {
