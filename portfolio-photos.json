@@ -1,51 +1,418 @@
 [
-  {"filename": "ally-bikes.jpg",              "alt": "Bikes on a trail or path",         "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "beach-balls.jpg",             "alt": "Beach balls on the sand",           "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "color_trees.jpg",             "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "beach-boats.jpg",             "alt": "Boats anchored at the beach",       "video": "beach-boats.mp4",             "location": "", "month": "", "year": ""},
-  {"filename": "beach-yoga.jpg",              "alt": "Yoga practice on the beach",        "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "tree_sky.jpg",                "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "boats.jpg",                   "alt": "Boats on the water",                "video": "boats.mp4",                   "location": "", "month": "", "year": ""},
-  {"filename": "castle.jpg",                  "alt": "Historic castle architecture",      "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "cliff-jump.jpg",              "alt": "Person jumping from a cliff",       "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "walkway_1.jpg",               "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "tree_shadow.jpg",             "alt": "Boats on the water",                "video": "tree_shadow.mp4",             "location": "", "month": "", "year": ""},
-  {"filename": "climbing.jpg",                "alt": "Rock climbing adventure",           "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "dubrovnik.jpg",               "alt": "View of Dubrovnik city",            "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "rainy.jpg",                   "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "grass.jpg",                   "alt": "Field of grass",                    "video": "grass.mp4",                   "location": "", "month": "", "year": ""},
-  {"filename": "K&K.jpg",                     "alt": "Beach friends",                     "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "hazy-sunset.jpg",             "alt": "Sunset through haze",               "video": "hazy-sunset.mp4",             "location": "", "month": "", "year": ""},
-  {"filename": "laptop.jpg",                  "alt": "Laptop workspace scene",            "video": "laptop.mp4",                  "location": "", "month": "", "year": ""},
-  {"filename": "legs.jpg",                    "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "mirror.jpg",                  "alt": "Mirror reflection",                 "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "rock-window.jpg",             "alt": "Window through rocks",              "video": "rock-window.mp4",             "location": "", "month": "", "year": ""},
-  {"filename": "mountain-beers.jpg",          "alt": "Beers in mountain setting",         "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "mountain-clouds.jpg",         "alt": "Clouds over mountains",             "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "lamppost.jpg",                "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "mountain-hut.jpg",            "alt": "Mountain shelter hut",              "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "flower-pots.jpg",             "alt": "Decorative flower pots",            "video": "flower-pots.mp4",             "location": "", "month": "", "year": ""},
-  {"filename": "mountains-clouds-snow.jpg",   "alt": "Snowy mountains with clouds",       "video": "mountains-clouds-snow.mp4",   "location": "", "month": "", "year": ""},
-  {"filename": "pink-flower-close-up.jpg",    "alt": "Close-up of pink flower",           "video": "pink-flower-close-up.mp4",    "location": "", "month": "", "year": ""},
-  {"filename": "portrait-mountain-side.jpg",  "alt": "Portrait on mountain side",         "video": "portrait-mountain-side.mp4",  "location": "", "month": "", "year": ""},
-  {"filename": "walkway_2.jpg",               "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "rocks.jpg",                   "alt": "Rock formation",                    "video": "rocks.mp4",                   "location": "", "month": "", "year": ""},
-  {"filename": "gatsby.jpg",                  "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "leaves.jpg",                  "alt": "Leaves",                            "video": "leaves.mp4",                  "location": "", "month": "", "year": ""},
-  {"filename": "charles_sunset.jpg",          "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "walkway_3.jpg",               "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "unicorn.jpg",                 "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "baker.jpg",                   "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "rugged.jpg",                  "alt": "Rugged landscape",                  "video": "rugged.mp4",                  "location": "", "month": "", "year": ""},
-  {"filename": "beach_volleyball.jpg",        "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "sharp-mountains.jpg",         "alt": "Sharp mountain peaks",              "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "sunset-beach.jpg",            "alt": "Sunset at the beach",               "video": "beach.mp4",                   "location": "", "month": "", "year": ""},
-  {"filename": "killer_whales.jpg",           "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "surf-shack.jpg",              "alt": "Surf shack on beach",               "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "thirsty-dog.jpg",             "alt": "Dog drinking water",                "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "shore.jpg",                   "alt": "Shore",                             "video": "shore.mp4",                   "location": "", "month": "", "year": ""},
-  {"filename": "trail.jpg",                   "alt": "Hiking trail",                      "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "green_leaves.jpg",            "alt": "",                                  "video": null,                          "location": "", "month": "", "year": ""},
-  {"filename": "waterfalls.jpg",              "alt": "Cascading waterfalls",              "video": "waterfalls.mp4",              "location": "", "month": "", "year": ""},
-  {"filename": "wildflowers.jpg",             "alt": "Field of wildflowers",              "video": null,                          "location": "", "month": "", "year": ""}
+  {
+    "filename": "ally-bikes.jpg",
+    "alt": "Bikes on a trail or path",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "beach-balls.jpg",
+    "alt": "Beach balls on the sand",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "color_trees.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "beach-boats.jpg",
+    "alt": "Boats anchored at the beach",
+    "video": "beach-boats.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "beach-yoga.jpg",
+    "alt": "Yoga practice on the beach",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "tree_sky.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "boats.jpg",
+    "alt": "Boats on the water",
+    "video": "boats.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "castle.jpg",
+    "alt": "Historic castle architecture",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "cliff-jump.jpg",
+    "alt": "Person jumping from a cliff",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "walkway_1.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "tree_shadow.jpg",
+    "alt": "Boats on the water",
+    "video": "tree_shadow.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "climbing.jpg",
+    "alt": "Rock climbing adventure",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "dubrovnik.jpg",
+    "alt": "View of Dubrovnik city",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "rainy.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "grass.jpg",
+    "alt": "Field of grass",
+    "video": "grass.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "K&K.jpg",
+    "alt": "Beach friends",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "hazy-sunset.jpg",
+    "alt": "Sunset through haze",
+    "video": "hazy-sunset.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "laptop.jpg",
+    "alt": "Laptop workspace scene",
+    "video": "laptop.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "legs.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "mirror.jpg",
+    "alt": "Mirror reflection",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "rock-window.jpg",
+    "alt": "Window through rocks",
+    "video": "rock-window.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "mountain-beers.jpg",
+    "alt": "Beers in mountain setting",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "mountain-clouds.jpg",
+    "alt": "Clouds over mountains",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "lamppost.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "mountain-hut.jpg",
+    "alt": "Mountain shelter hut",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "flower-pots.jpg",
+    "alt": "Decorative flower pots",
+    "video": "flower-pots.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "mountains-clouds-snow.jpg",
+    "alt": "Snowy mountains with clouds",
+    "video": "mountains-clouds-snow.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "pink-flower-close-up.jpg",
+    "alt": "Close-up of pink flower",
+    "video": "pink-flower-close-up.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "portrait-mountain-side.jpg",
+    "alt": "Portrait on mountain side",
+    "video": "portrait-mountain-side.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "walkway_2.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "rocks.jpg",
+    "alt": "Rock formation",
+    "video": "rocks.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "gatsby.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "leaves.jpg",
+    "alt": "Leaves",
+    "video": "leaves.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "charles_sunset.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "walkway_3.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "unicorn.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "baker.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "rugged.jpg",
+    "alt": "Rugged landscape",
+    "video": "rugged.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "beach_volleyball.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "sharp-mountains.jpg",
+    "alt": "Sharp mountain peaks",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "sunset-beach.jpg",
+    "alt": "Sunset at the beach",
+    "video": "beach.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "killer_whales.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "surf-shack.jpg",
+    "alt": "Surf shack on beach",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "thirsty-dog.jpg",
+    "alt": "Dog drinking water",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "shore.jpg",
+    "alt": "Shore",
+    "video": "shore.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "trail.jpg",
+    "alt": "Hiking trail",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "green_leaves.jpg",
+    "alt": "",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "waterfalls.jpg",
+    "alt": "Cascading waterfalls",
+    "video": "waterfalls.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "wildflowers.jpg",
+    "alt": "Field of wildflowers",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "000059390025.jpg",
+    "alt": "eight blades, one wake",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "Gold-200-1-1.jpg",
+    "alt": "the roll remembers its own burning",
+    "video": null,
+    "location": "",
+    "month": "",
+    "year": ""
+  },
+  {
+    "filename": "000089610010.jpg",
+    "alt": "net without a game",
+    "video": "000089610010.mp4",
+    "location": "",
+    "month": "",
+    "year": ""
+  }
 ]
