@@ -1030,28 +1030,67 @@ function updateMetaOverlay(card, photo) {
 
 // ── ADD TO SITE ───────────────────────────────────────────────────────────────
 
-function buildSitePreviewHTML(photos, newFilename, newDataUrl) {
+async function fetchVideoAsBase64(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(',')[1]);
+      reader.readAsDataURL(blob);
+    });
+  } catch { return null; }
+}
+
+function updateSiteSelectionBtn() {
+  const n   = photos.filter(p => p.inPortfolio && p.selectedForSite).length;
+  const btn = document.getElementById('add-to-site-multi-btn');
+  if (!btn) return;
+  btn.classList.toggle('hidden', n === 0);
+  if (n > 0) btn.textContent = `Add ${n} to Site →`;
+}
+
+// allEntries  : combined existing + new entries (full portfolio-photos.json shape)
+// newPhotoMap : Map<filename, filmLabPhoto> for new photos (provides dataUrl + videoUrl)
+function buildSitePreviewHTML(allEntries, newPhotoMap) {
   const SITE = 'https://ndellamaria.github.io';
   const MO   = ['January','February','March','April','May','June','July',
                  'August','September','October','November','December'];
 
-  const items = photos.map(p => {
-    const isNew  = p.filename === newFilename;
-    const imgSrc = isNew ? newDataUrl : `${SITE}/pics/${encodeURIComponent(p.filename)}`;
+  const items = allEntries.map(p => {
+    const filmPhoto = newPhotoMap.get(p.filename);
+    const isNew     = !!filmPhoto;
+
+    const imgSrc  = isNew ? filmPhoto.dataUrl : `${SITE}/pics/${encodeURIComponent(p.filename)}`;
+    const videoSrc = isNew
+      ? (filmPhoto.videoUrl || null)
+      : (p.video ? `${SITE}/pics/${encodeURIComponent(p.video)}` : null);
+
     const month  = p.month ? MO[parseInt(p.month, 10) - 1] : '';
     const date   = [month, p.year].filter(Boolean).join(' ');
 
     const overlayContent = p.location || date
       ? `${p.location ? `<div class="overlay-location">${p.location}</div>` : ''}${date ? `<div class="overlay-date">${date}</div>` : ''}`
       : (isNew ? '<div class="overlay-location">NEW</div>' : '');
-
     const overlay = overlayContent ? `<div class="overlay${isNew ? ' overlay-new' : ''}">${overlayContent}</div>` : '';
 
+    if (videoSrc) {
+      return `<div class="portfolio-item${isNew ? ' is-new' : ''}">
+  <img src="${imgSrc}" alt="${p.alt || ''}">
+  <video autoplay muted loop playsinline src="${videoSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
+  ${overlay}
+</div>`;
+    }
     return `<div class="portfolio-item${isNew ? ' is-new' : ''}">
   <img src="${imgSrc}" alt="${p.alt || ''}">
   ${overlay}
 </div>`;
   }).join('\n');
+
+  const newCount  = newPhotoMap.size;
+  const animCount = [...newPhotoMap.values()].filter(p => p.videoUrl).length;
+  const banner    = `Preview — ${newCount} new photo${newCount !== 1 ? 's' : ''} highlighted in blue${animCount ? ` · ${animCount} animated` : ''}`;
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1068,19 +1107,23 @@ body{background:rgb(245,245,244);font-family:"Inria Sans",sans-serif;padding-bot
 .portfolio-item{break-inside:avoid;margin-bottom:1.5rem;position:relative;overflow:hidden;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);display:inline-block;width:100%;background:#000}
 .portfolio-item.is-new{box-shadow:0 0 0 3px #5b8ff0,0 4px 20px rgba(91,143,240,.35)}
 .portfolio-item img{width:100%;height:auto;display:block}
-.overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;padding:2rem 1rem .85rem;pointer-events:none}
+.portfolio-item video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;padding:2rem 1rem .85rem;pointer-events:none;z-index:1}
 .overlay-new{background:rgba(70,110,220,.82)}
 .overlay-location{font-size:11pt;font-weight:300}
 .overlay-date{font-size:9.5pt;font-weight:300;opacity:.7;margin-top:.1rem}
 </style></head><body>
-<div class="preview-banner">Preview — new photo highlighted in blue · videos not shown</div>
+<div class="preview-banner">${banner}</div>
 <div class="portfolio-title"><h1 class="film">35mm Film</h1></div>
 <div class="portfolio">
 ${items}
 </div></body></html>`;
 }
 
-async function addToSite(photo) {
+async function addSelectedToSite() {
+  const selected = photos.filter(p => p.inPortfolio && p.selectedForSite);
+  if (!selected.length) return;
+
   const modal  = document.getElementById('site-modal');
   const frame  = document.getElementById('site-preview-frame');
   const prBtn  = document.getElementById('open-pr-btn');
@@ -1097,48 +1140,74 @@ async function addToSite(photo) {
     currentPhotos = await fetch('https://ndellamaria.github.io/portfolio-photos.json', { cache: 'no-store' }).then(r => r.json());
   } catch (e) { console.warn('Could not fetch live portfolio JSON:', e.message); }
 
-  const safeName = photo.file.name.replace(/\s+/g, '-');
-  const newEntry = {
-    filename: safeName,
-    alt: photo.analysis?.title || safeName,
-    video: null,
-    location: photo.location || '',
-    month: photo.dateMonth || '',
-    year: photo.dateYear || '',
-  };
+  // Build entries and a filename → photo map for the preview
+  const newEntries = selected.map(p => {
+    const safeName      = p.file.name.replace(/\s+/g, '-');
+    const videoFilename = p.videoUrl ? safeName.replace(/\.[^.]+$/, '.mp4') : null;
+    return {
+      entry: {
+        filename: safeName,
+        alt:      p.analysis?.title || safeName,
+        video:    videoFilename,
+        location: p.location  || '',
+        month:    p.dateMonth || '',
+        year:     p.dateYear  || '',
+      },
+      photo: p,
+      safeName,
+      videoFilename,
+    };
+  });
 
-  const blob = new Blob([buildSitePreviewHTML([...currentPhotos, newEntry], safeName, photo.dataUrl)], { type: 'text/html' });
+  const allEntries  = [...currentPhotos, ...newEntries.map(n => n.entry)];
+  const newPhotoMap = new Map(newEntries.map(n => [n.entry.filename, n.photo]));
+
+  const blob = new Blob([buildSitePreviewHTML(allEntries, newPhotoMap)], { type: 'text/html' });
   frame.src = URL.createObjectURL(blob);
 
+  const n = selected.length;
   prBtn.disabled = false;
-  prBtn.textContent = 'Open PR on GitHub →';
+  prBtn.textContent = `Open PR (${n} photo${n !== 1 ? 's' : ''}) →`;
 
   prBtn.onclick = async () => {
     prBtn.disabled = true;
-    prBtn.textContent = 'Opening PR…';
     status.innerHTML = '';
+
     try {
-      const res = await fetch(`${CLASSIFIER_URL}/github/add-photo`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_base64: photo.dataUrl.split(',')[1],
-          filename: safeName,
+      // Fetch videos client-side before uploading
+      const photoPayloads = await Promise.all(newEntries.map(async ({ photo, safeName, videoFilename }) => {
+        let video_base64 = null;
+        if (photo.videoUrl) {
+          prBtn.textContent = `Fetching video…`;
+          video_base64 = await fetchVideoAsBase64(photo.videoUrl);
+        }
+        return {
+          image_base64:   photo.dataUrl.split(',')[1],
+          filename:       safeName,
+          video_base64,
+          video_filename: video_base64 ? videoFilename : null,
           meta: {
             title:    photo.analysis?.title || '',
-            location: photo.location || '',
+            location: photo.location  || '',
             month:    photo.dateMonth || '',
-            year:     photo.dateYear || '',
-          }
-        })
+            year:     photo.dateYear  || '',
+          },
+        };
+      }));
+
+      prBtn.textContent = 'Opening PR…';
+      const res  = await fetch(`${CLASSIFIER_URL}/github/add-photo`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ photos: photoPayloads }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
       prBtn.textContent = 'PR opened ✓';
-      status.innerHTML = `<a href="${data.pr_url}" target="_blank" rel="noopener">View PR #${data.pr_number} →</a>`;
+      status.innerHTML  = `<a href="${data.pr_url}" target="_blank" rel="noopener">View PR #${data.pr_number} →</a>`;
     } catch (err) {
-      prBtn.disabled = false;
-      prBtn.textContent = 'Open PR on GitHub →';
+      prBtn.disabled    = false;
+      prBtn.textContent = `Open PR (${n} photo${n !== 1 ? 's' : ''}) →`;
       status.textContent = `Error: ${err.message}`;
     }
   };
@@ -1160,6 +1229,7 @@ function renderPortfolioSection() {
   document.getElementById('portfolio-desc').textContent =
     `${n} frame${n !== 1 ? 's' : ''} selected for portfolio.`;
   section.classList.remove('hidden');
+  updateSiteSelectionBtn();
 }
 
 function buildPortfolioCard(photo) {
@@ -1191,7 +1261,7 @@ function buildPortfolioCard(photo) {
       <div class="card-actions">
         <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove</button>
         <button class="animate-btn${photo.videoUrl ? ' animated' : ''}" ${photo.animating ? 'disabled' : ''} data-id="${photo.id}">${animBtnText}</button>
-        <button class="add-to-site-btn" data-id="${photo.id}">+ Site</button>
+        <button class="add-to-site-btn${photo.selectedForSite ? ' selected' : ''}" data-id="${photo.id}">${photo.selectedForSite ? '✓ Site' : '+ Site'}</button>
       </div>
     </div>`;
 
@@ -1216,7 +1286,13 @@ function buildPortfolioCard(photo) {
   div.querySelector('.animate-btn').addEventListener('click', () => {
     photo.videoUrl ? unAnimatePhoto(photo) : animatePhoto(photo);
   });
-  div.querySelector('.add-to-site-btn').addEventListener('click', () => addToSite(photo));
+  div.querySelector('.add-to-site-btn').addEventListener('click', () => {
+    photo.selectedForSite = !photo.selectedForSite;
+    const siteBtn = div.querySelector('.add-to-site-btn');
+    siteBtn.textContent = photo.selectedForSite ? '✓ Site' : '+ Site';
+    siteBtn.classList.toggle('selected', photo.selectedForSite);
+    updateSiteSelectionBtn();
+  });
 
   div.querySelector('.meta-location-input').addEventListener('input', e => {
     photo.location = e.target.value;
@@ -1313,7 +1389,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('add-more-btn')          .addEventListener('click', () => fileInput.click());
   document.getElementById('clear-btn')             .addEventListener('click', clearAll);
   document.getElementById('keep-portfolio-btn')    .addEventListener('click', keepPortfolioOnly);
-  document.getElementById('eval-report-btn')       .addEventListener('click', generateEvaluationReport);
+  document.getElementById('eval-report-btn')          .addEventListener('click', generateEvaluationReport);
+  document.getElementById('add-to-site-multi-btn')    .addEventListener('click', addSelectedToSite);
   document.getElementById('logout-btn')            .addEventListener('click', logout);
   document.getElementById('export-portfolio-btn')  .addEventListener('click', exportPortfolio);
   document.getElementById('download-portfolio-btn').addEventListener('click', downloadPortfolio);
