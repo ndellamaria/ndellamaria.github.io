@@ -3,6 +3,19 @@
 // SHA-256 of "darkroom" — change by running: echo -n "yourpassword" | shasum -a 256
 const PASSWORD_HASH = 'c6a31148a73f1db678218c65c55b395d76aa11d6b6c6407634f0399963b1af5e';
 
+const TEST_ROLL_URLS = [
+  'https://picsum.photos/id/10/1200/800',
+  'https://picsum.photos/id/15/1200/800',
+  'https://picsum.photos/id/20/1200/800',
+  'https://picsum.photos/id/25/1200/800',
+  'https://picsum.photos/id/37/1200/800',
+  'https://picsum.photos/id/50/1200/800',
+  'https://picsum.photos/id/67/1200/800',
+  'https://picsum.photos/id/100/1200/800',
+  'https://picsum.photos/id/200/1200/800',
+  'https://picsum.photos/id/300/1200/800',
+];
+
 const SESSION_KEY         = 'filmlab_auth';
 const MODEL               = 'claude-sonnet-4-6';
 const CLASSIFIER_URL      = 'https://analog-image-classifier.onrender.com';
@@ -219,6 +232,31 @@ ${items}
 }
 
 // ── PHOTO MANAGEMENT ─────────────────────────────────────────────────────────
+
+async function loadTestRoll() {
+  const btn = document.getElementById('test-roll-btn');
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+
+  try {
+    for (let i = 0; i < TEST_ROLL_URLS.length; i++) {
+      const resp  = await fetch(TEST_ROLL_URLS[i]);
+      const blob  = await resp.blob();
+      const file  = new File([blob], `test-${String(i + 1).padStart(2, '0')}.jpg`, { type: 'image/jpeg' });
+      const dataUrl = await readFileAsDataUrl(file);
+      const photo = { id: uid(), file, dataUrl, status: 'pending', analysis: null };
+      photos.push(photo);
+      document.getElementById('photos-grid').appendChild(buildCard(photo));
+    }
+    updateCount();
+    document.getElementById('photos-section').classList.remove('hidden');
+  } catch (e) {
+    console.error('Failed to load test roll:', e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'load a test roll';
+  }
+}
 
 async function addFiles(fileList) {
   const files = Array.from(fileList).filter(f => f.type.startsWith('image/'));
@@ -760,8 +798,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput   = document.getElementById('file-input');
   const folderInput = document.getElementById('folder-input');
 
+  document.getElementById('test-roll-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    loadTestRoll();
+  });
+
   dropZone.addEventListener('click', e => {
-    if (e.target.closest('label') || e.target === fileInput || e.target === folderInput) return;
+    if (e.target.closest('label') || e.target.closest('#test-roll-btn') || e.target === fileInput || e.target === folderInput) return;
     fileInput.click();
   });
   dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });

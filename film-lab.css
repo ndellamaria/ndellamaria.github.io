@@ -329,6 +329,23 @@ input::placeholder {
   letter-spacing: 0.06em;
 }
 
+.test-roll-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.75rem;
+  font-size: 10pt;
+  color: var(--text-dim);
+  opacity: 0.6;
+}
+
+.test-roll-row .text-btn {
+  font-size: 10pt;
+  padding: 0.1rem 0.3rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ── SECTION HEADER ── */
 
 .section-header {
