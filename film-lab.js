@@ -824,19 +824,118 @@ function updateMetaOverlay(card, photo) {
 
 // ── ADD TO SITE ───────────────────────────────────────────────────────────────
 
-function addToSite(photo) {
-  const rawName = photo.file.name;
-  const safeName = rawName.replace(/\s+/g, '-');
-  const title = escapeHtml(photo.analysis?.title || safeName);
+function buildSitePreviewHTML(photos, newFilename, newDataUrl) {
+  const SITE = 'https://ndellamaria.github.io';
+  const MO   = ['January','February','March','April','May','June','July',
+                 'August','September','October','November','December'];
 
-  const a = document.createElement('a');
-  a.href = photo.dataUrl;
-  a.download = safeName;
-  a.click();
+  const items = photos.map(p => {
+    const isNew  = p.filename === newFilename;
+    const imgSrc = isNew ? newDataUrl : `${SITE}/pics/${encodeURIComponent(p.filename)}`;
+    const month  = p.month ? MO[parseInt(p.month, 10) - 1] : '';
+    const date   = [month, p.year].filter(Boolean).join(' ');
 
-  const snippet = `<div class="portfolio-item">\n  <img src="pics/${safeName}" alt="${title}">\n</div>`;
-  document.getElementById('snippet-code').textContent = snippet;
-  document.getElementById('snippet-modal').classList.remove('hidden');
+    const overlayContent = p.location || date
+      ? `${p.location ? `<div class="overlay-location">${p.location}</div>` : ''}${date ? `<div class="overlay-date">${date}</div>` : ''}`
+      : (isNew ? '<div class="overlay-location">NEW</div>' : '');
+
+    const overlay = overlayContent ? `<div class="overlay${isNew ? ' overlay-new' : ''}">${overlayContent}</div>` : '';
+
+    return `<div class="portfolio-item${isNew ? ' is-new' : ''}">
+  <img src="${imgSrc}" alt="${p.alt || ''}">
+  ${overlay}
+</div>`;
+  }).join('\n');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inria+Sans:ital,wght@0,300;0,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:rgb(245,245,244);font-family:"Inria Sans",sans-serif;padding-bottom:4rem}
+.preview-banner{background:#1a1a19;color:#e8e8e6;font-size:10pt;font-weight:300;padding:0.6rem 1.25rem;letter-spacing:0.03em}
+.portfolio-title{padding:2rem 5% 1rem}
+.portfolio-title h1{font-size:30pt;font-weight:300}
+.portfolio{columns:4;column-gap:1.5rem;padding:0 1rem;max-width:1400px;margin:0 auto}
+@media(max-width:1200px){.portfolio{columns:3}}
+@media(max-width:900px){.portfolio{columns:2}}
+.portfolio-item{break-inside:avoid;margin-bottom:1.5rem;position:relative;overflow:hidden;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);display:inline-block;width:100%;background:#000}
+.portfolio-item.is-new{box-shadow:0 0 0 3px #5b8ff0,0 4px 20px rgba(91,143,240,.35)}
+.portfolio-item img{width:100%;height:auto;display:block}
+.overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;padding:2rem 1rem .85rem;pointer-events:none}
+.overlay-new{background:rgba(70,110,220,.82)}
+.overlay-location{font-size:11pt;font-weight:300}
+.overlay-date{font-size:9.5pt;font-weight:300;opacity:.7;margin-top:.1rem}
+</style></head><body>
+<div class="preview-banner">Preview — new photo highlighted in blue · videos not shown</div>
+<div class="portfolio-title"><h1 class="film">35mm Film</h1></div>
+<div class="portfolio">
+${items}
+</div></body></html>`;
+}
+
+async function addToSite(photo) {
+  const modal  = document.getElementById('site-modal');
+  const frame  = document.getElementById('site-preview-frame');
+  const prBtn  = document.getElementById('open-pr-btn');
+  const status = document.getElementById('pr-status');
+
+  modal.classList.remove('hidden');
+  frame.src = '';
+  prBtn.disabled = true;
+  prBtn.textContent = 'Building preview…';
+  status.innerHTML = '';
+
+  let currentPhotos = [];
+  try {
+    currentPhotos = await fetch('https://ndellamaria.github.io/portfolio-photos.json', { cache: 'no-store' }).then(r => r.json());
+  } catch (e) { console.warn('Could not fetch live portfolio JSON:', e.message); }
+
+  const safeName = photo.file.name.replace(/\s+/g, '-');
+  const newEntry = {
+    filename: safeName,
+    alt: photo.analysis?.title || safeName,
+    video: null,
+    location: photo.location || '',
+    month: photo.dateMonth || '',
+    year: photo.dateYear || '',
+  };
+
+  const blob = new Blob([buildSitePreviewHTML([...currentPhotos, newEntry], safeName, photo.dataUrl)], { type: 'text/html' });
+  frame.src = URL.createObjectURL(blob);
+
+  prBtn.disabled = false;
+  prBtn.textContent = 'Open PR on GitHub →';
+
+  prBtn.onclick = async () => {
+    prBtn.disabled = true;
+    prBtn.textContent = 'Opening PR…';
+    status.innerHTML = '';
+    try {
+      const res = await fetch(`${CLASSIFIER_URL}/github/add-photo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_base64: photo.dataUrl.split(',')[1],
+          filename: safeName,
+          meta: {
+            title:    photo.analysis?.title || '',
+            location: photo.location || '',
+            month:    photo.dateMonth || '',
+            year:     photo.dateYear || '',
+          }
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+      prBtn.textContent = 'PR opened ✓';
+      status.innerHTML = `<a href="${data.pr_url}" target="_blank" rel="noopener">View PR #${data.pr_number} →</a>`;
+    } catch (err) {
+      prBtn.disabled = false;
+      prBtn.textContent = 'Open PR on GitHub →';
+      status.textContent = `Error: ${err.message}`;
+    }
+  };
 }
 
 // ── PORTFOLIO SECTION ─────────────────────────────────────────────────────────
@@ -1017,17 +1116,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('back-to-roll-btn')   .addEventListener('click', showRollView);
   document.getElementById('clear-all-removed-btn').addEventListener('click', clearAllRemoved);
 
-  // Snippet modal
-  document.getElementById('copy-snippet-btn').addEventListener('click', () => {
-    const text = document.getElementById('snippet-code').textContent;
-    navigator.clipboard.writeText(text).then(() => {
-      const btn = document.getElementById('copy-snippet-btn');
-      btn.textContent = 'Copied!';
-      setTimeout(() => { btn.textContent = 'Copy HTML'; }, 2000);
-    });
-  });
-  document.getElementById('close-snippet-btn').addEventListener('click', () => {
-    document.getElementById('snippet-modal').classList.add('hidden');
+  // Site preview modal
+  document.getElementById('close-site-modal-btn').addEventListener('click', () => {
+    const modal = document.getElementById('site-modal');
+    const frame = document.getElementById('site-preview-frame');
+    if (frame.src.startsWith('blob:')) URL.revokeObjectURL(frame.src);
+    frame.src = '';
+    modal.classList.add('hidden');
   });
 
 });

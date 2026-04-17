@@ -1,13 +1,84 @@
+const MONTHS = ['January','February','March','April','May','June','July',
+                 'August','September','October','November','December'];
+
+// ── PORTFOLIO RENDER ─────────────────────────────────────────────────────────
+
+async function renderPortfolio() {
+  const grid = document.getElementById('portfolio-grid');
+  if (!grid) return;
+
+  const photos = await fetch('./portfolio-photos.json', { cache: 'no-store' }).then(r => r.json());
+
+  grid.innerHTML = photos.map(p => {
+    const hasVideo = !!p.video;
+    const orientation = `onload="this.setAttribute('data-orientation',this.naturalHeight>this.naturalWidth?'portrait':'landscape')"`;
+
+    const videoHtml = hasVideo ? `
+      <video muted playsinline loop preload="none" poster="pics/${p.filename}">
+        <source src="videos/${p.video}" type="video/mp4">
+      </video>` : '';
+
+    const month  = p.month  ? MONTHS[parseInt(p.month, 10) - 1] : '';
+    const date   = [month, p.year].filter(Boolean).join(' ');
+    const overlayHtml = (p.location || date) ? `
+      <div class="overlay">
+        ${p.location ? `<div class="overlay-location">${p.location}</div>` : ''}
+        ${date ? `<div class="overlay-date">${date}</div>` : ''}
+      </div>` : '';
+
+    return `<div class="portfolio-item${hasVideo ? ' has-video' : ''}">
+  <img src="pics/${p.filename}" alt="${p.alt || ''}" ${orientation}>
+  ${videoHtml}${overlayHtml}
+</div>`;
+  }).join('\n');
+
+  initVideoObservers();
+}
+
+// ── VIDEO OBSERVERS ──────────────────────────────────────────────────────────
+
+function initVideoObservers() {
+  document.querySelectorAll('.portfolio-item.has-video').forEach(item => {
+    const video = item.querySelector('video');
+    if (!video) return;
+
+    new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          video.preload = 'auto';
+          video.play().then(() => item.classList.add('video-ready'))
+               .catch(e => console.log('Autoplay prevented:', e));
+          entry.target._playObserver.unobserve(item);
+        }
+      });
+    }, { threshold: 0.5, rootMargin: '50px' }).observe(item);
+
+    const pauseObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting && video.played.length > 0) {
+          video.pause();
+        } else if (entry.isIntersecting && item.classList.contains('video-ready')) {
+          video.play().catch(e => console.log('Replay prevented:', e));
+        }
+      });
+    }, { threshold: 0.1 });
+
+    pauseObserver.observe(item);
+  });
+}
+
+// ── TYPING EFFECT ────────────────────────────────────────────────────────────
+
 const phrases = [
-  " a software developer.",
-  " an outdoor enthusiast.",
-  " an amateur film photographer."
+  ' a software developer.',
+  ' an outdoor enthusiast.',
+  ' an amateur film photographer.'
 ];
 
 let currentPhraseIndex = 0;
 let currentText = '';
 let isDeleting = false;
-let isWaiting = false;
+let isWaiting  = false;
 
 function type() {
   const currentPhrase = phrases[currentPhraseIndex];
@@ -25,84 +96,24 @@ function type() {
     return;
   }
 
-  if (isDeleting) {
-    currentText = currentPhrase.substring(0, currentText.length - 1);
-  } else {
-    currentText = currentPhrase.substring(0, currentText.length + 1);
-  }
+  currentText = isDeleting
+    ? currentPhrase.substring(0, currentText.length - 1)
+    : currentPhrase.substring(0, currentText.length + 1);
 
-  document.getElementById('typing-text').innerHTML =
-    currentText + '<span class="cursor"></span>';
+  document.getElementById('typing-text').innerHTML = currentText + '<span class="cursor"></span>';
 
-  let delta = isDeleting ? 50 : 75;
+  const delta = isDeleting ? 50 : 75;
 
   if (!isDeleting && currentText === currentPhrase) {
-    isDeleting = true;
-    isWaiting = true;
-    type();
-    return;
+    isDeleting = true; isWaiting = true; type(); return;
   }
-
   if (isDeleting && currentText === '') {
-    isDeleting = false;
-    isWaiting = true;
-    type();
-    return;
+    isDeleting = false; isWaiting = true; type(); return;
   }
 
   setTimeout(type, delta);
 }
 
-// Start the typing effect
-window.onload = function () {
-  type();
-}
+window.onload = () => type();
 
-document.addEventListener('DOMContentLoaded', function () {
-  const videoItems = document.querySelectorAll('.portfolio-item.has-video');
-
-  videoItems.forEach(item => {
-    const video = item.querySelector('video');
-
-    // Create an intersection observer
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          // When item comes into view:
-          // 1. Start loading the video
-          video.preload = "auto";
-
-          // 2. Play the video when it's ready
-          video.play().then(() => {
-            item.classList.add('video-ready');
-          }).catch(e => console.log("Autoplay prevented:", e));
-
-          // 3. Stop observing this item
-          observer.unobserve(item);
-        }
-      });
-    }, {
-      // Adjust these values to control when videos start playing
-      threshold: 0.5, // Video starts when 50% visible
-      rootMargin: '50px' // Adds a 50px margin to trigger slightly earlier
-    });
-
-    // Start observing the item
-    observer.observe(item);
-
-    // Optional: Pause video when it's not in view to save resources
-    const visibilityObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting && video.played.length > 0) {
-          video.pause();
-        } else if (entry.isIntersecting && item.classList.contains('video-ready')) {
-          video.play().catch(e => console.log("Replay prevented:", e));
-        }
-      });
-    }, {
-      threshold: 0.1 // Pause/play when just 10% visible
-    });
-
-    visibilityObserver.observe(item);
-  });
-});
+document.addEventListener('DOMContentLoaded', () => renderPortfolio());
