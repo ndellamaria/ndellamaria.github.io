@@ -238,7 +238,7 @@ async function loadTestRoll() {
 
     for (const name of filenames) {
       try {
-        const resp    = await fetch(`./test-roll/${name}`);
+        const resp    = await fetch(`./test-roll/${encodeURIComponent(name)}`);
         if (!resp.ok) continue;
         const blob    = await resp.blob();
         const file    = new File([blob], name, { type: blob.type || 'image/jpeg' });
