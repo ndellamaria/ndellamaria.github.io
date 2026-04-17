@@ -258,7 +258,10 @@ async function loadTestRoll() {
     }
 
     updateCount();
-    if (photos.length) document.getElementById('photos-section').classList.remove('hidden');
+    if (photos.length) {
+      document.getElementById('photos-section').classList.remove('hidden');
+      developRoll();
+    }
   } catch (e) {
     console.error('Failed to load test roll:', e);
   } finally {
@@ -280,6 +283,7 @@ async function addFiles(fileList) {
 
   updateCount();
   document.getElementById('photos-section').classList.remove('hidden');
+  developRoll();
 }
 
 function removePhoto(id) {
