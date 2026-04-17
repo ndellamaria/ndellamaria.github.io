@@ -84,7 +84,10 @@ function dataUrlToBlob(dataUrl) {
 
 async function checkClassifierHealth() {
   try {
-    const res = await fetch(`${CLASSIFIER_URL}/health`, { signal: AbortSignal.timeout(2000) });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(`${CLASSIFIER_URL}/health`, { signal: controller.signal });
+    clearTimeout(timer);
     return res.ok;
   } catch { return false; }
 }
