@@ -618,13 +618,6 @@ function buildCard(photo) {
 function setCardAnalyzing(photo) {
   const badge = document.getElementById(`status-${photo.id}`);
   if (badge) { badge.className = 'status-badge status-analyzing'; badge.textContent = 'Developing…'; }
-  const body = document.getElementById(`body-${photo.id}`);
-  if (body) {
-    body.innerHTML = /* html */`
-      <div class="card-loading">
-        <div class="spinner"></div>
-      </div>`;
-  }
 }
 
 function setCardDone(photo) {
@@ -676,9 +669,7 @@ function setCardDone(photo) {
         ${photo.inPortfolio ? '★ In Portfolio' : '+ Add to Portfolio'}
       </button>
     </div>
-    <div class="judge-row" id="judge-${photo.id}">
-      <span class="judge-loading">Peer reviewing…</span>
-    </div>`;
+`;
 
   body.querySelector('.portfolio-toggle').addEventListener('click', () => togglePortfolio(photo.id));
 }
@@ -1146,17 +1137,17 @@ function buildSitePreviewHTML(allEntries, newPhotoMap) {
 
     const overlayContent = p.location || date
       ? `${p.location ? `<div class="overlay-location">${p.location}</div>` : ''}${date ? `<div class="overlay-date">${date}</div>` : ''}`
-      : (isNew ? '<div class="overlay-location">NEW</div>' : '');
-    const overlay = overlayContent ? `<div class="overlay${isNew ? ' overlay-new' : ''}">${overlayContent}</div>` : '';
+      : '';
+    const overlay = overlayContent ? `<div class="overlay">${overlayContent}</div>` : '';
 
     if (videoSrc) {
-      return `<div class="portfolio-item${isNew ? ' is-new' : ''}">
+      return `<div class="portfolio-item">
   <img src="${imgSrc}" alt="${p.alt || ''}">
   <video autoplay muted loop playsinline src="${videoSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
   ${overlay}
 </div>`;
     }
-    return `<div class="portfolio-item${isNew ? ' is-new' : ''}">
+    return `<div class="portfolio-item">
   <img src="${imgSrc}" alt="${p.alt || ''}">
   ${overlay}
 </div>`;
@@ -1164,14 +1155,15 @@ function buildSitePreviewHTML(allEntries, newPhotoMap) {
 
   const newCount  = newPhotoMap.size;
   const animCount = [...newPhotoMap.values()].filter(p => p.videoUrl).length;
-  const banner    = `Preview — ${newCount} new photo${newCount !== 1 ? 's' : ''} highlighted in blue${animCount ? ` · ${animCount} animated` : ''}`;
+  const banner    = `Preview — ${newCount} new photo${newCount !== 1 ? 's' : ''}${animCount ? ` · ${animCount} animated` : ''}`;
 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inria+Sans:ital,wght@0,300;0,400&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:rgb(245,245,244);font-family:"Inria Sans",sans-serif;padding-bottom:4rem}
+body{background:rgb(245,245,244);font-family:"Inria Sans",sans-serif;padding-bottom:4rem;opacity:0;transition:opacity 0.4s ease}
+body.ready{opacity:1}
 .preview-banner{background:#1a1a19;color:#e8e8e6;font-size:10pt;font-weight:300;padding:0.6rem 1.25rem;letter-spacing:0.03em}
 .portfolio-title{padding:2rem 5% 1rem}
 .portfolio-title h1{font-size:30pt;font-weight:300}
@@ -1179,14 +1171,25 @@ body{background:rgb(245,245,244);font-family:"Inria Sans",sans-serif;padding-bot
 @media(max-width:1200px){.portfolio{columns:3}}
 @media(max-width:900px){.portfolio{columns:2}}
 .portfolio-item{break-inside:avoid;margin-bottom:1.5rem;position:relative;overflow:hidden;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.1);display:inline-block;width:100%;background:#000}
-.portfolio-item.is-new{box-shadow:0 0 0 3px #5b8ff0,0 4px 20px rgba(91,143,240,.35)}
 .portfolio-item img{width:100%;height:auto;display:block}
 .portfolio-item video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.72));color:#fff;padding:2rem 1rem .85rem;pointer-events:none;z-index:1}
-.overlay-new{background:rgba(70,110,220,.82)}
 .overlay-location{font-size:11pt;font-weight:300}
 .overlay-date{font-size:9.5pt;font-weight:300;opacity:.7;margin-top:.1rem}
-</style></head><body>
+</style>
+<script>
+window.addEventListener('load', () => {
+  const imgs = document.querySelectorAll('img');
+  if (!imgs.length) { document.body.classList.add('ready'); return; }
+  let loaded = 0;
+  const done = () => { if (++loaded >= imgs.length) document.body.classList.add('ready'); };
+  imgs.forEach(img => {
+    if (img.complete) done();
+    else { img.addEventListener('load', done); img.addEventListener('error', done); }
+  });
+});
+</script>
+</head><body>
 <div class="preview-banner">${banner}</div>
 <div class="portfolio-title"><h1 class="film">35mm Film</h1></div>
 <div class="portfolio">
