@@ -798,6 +798,40 @@ function refreshPortfolioCard(photo) {
   }
 }
 
+// ── LOCATION / DATE METADATA ─────────────────────────────────────────────────
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const [year, month] = dateStr.split('-');
+  const months = ['January','February','March','April','May','June','July',
+                  'August','September','October','November','December'];
+  return `${months[parseInt(month, 10) - 1]} ${year}`;
+}
+
+function updateMetaOverlay(card, photo) {
+  const locEl  = card.querySelector('.meta-loc');
+  const dateEl = card.querySelector('.meta-date-display');
+  if (locEl)  locEl.textContent  = photo.location || '';
+  if (dateEl) dateEl.textContent = formatDate(photo.date);
+}
+
+// ── ADD TO SITE ───────────────────────────────────────────────────────────────
+
+function addToSite(photo) {
+  const rawName = photo.file.name;
+  const safeName = rawName.replace(/\s+/g, '-');
+  const title = escapeHtml(photo.analysis?.title || safeName);
+
+  const a = document.createElement('a');
+  a.href = photo.dataUrl;
+  a.download = safeName;
+  a.click();
+
+  const snippet = `<div class="portfolio-item">\n  <img src="pics/${safeName}" alt="${title}">\n</div>`;
+  document.getElementById('snippet-code').textContent = snippet;
+  document.getElementById('snippet-modal').classList.remove('hidden');
+}
+
 // ── PORTFOLIO SECTION ─────────────────────────────────────────────────────────
 
 function renderPortfolioSection() {
@@ -827,12 +861,21 @@ function buildPortfolioCard(photo) {
   div.innerHTML = /* html */`
     <div class="photo-card-img-wrap">
       ${photo.animating ? '<div class="anim-overlay">Animating…</div>' : ''}
+      <div class="photo-meta-overlay">
+        <span class="meta-loc">${escapeHtml(photo.location || '')}</span>
+        <span class="meta-date-display">${formatDate(photo.date)}</span>
+      </div>
     </div>
     <div class="photo-card-body">
       <p class="photo-card-title">${escapeHtml(analysis?.title || photo.file.name)}</p>
+      <div class="meta-inputs">
+        <input type="text" class="meta-input meta-location-input" placeholder="Location" value="${escapeHtml(photo.location || '')}">
+        <input type="month" class="meta-input meta-date-input" value="${photo.date || ''}">
+      </div>
       <div class="card-actions">
-        <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove from Portfolio</button>
+        <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove</button>
         <button class="animate-btn${photo.videoUrl ? ' animated' : ''}" ${photo.animating ? 'disabled' : ''} data-id="${photo.id}">${animBtnText}</button>
+        <button class="add-to-site-btn" data-id="${photo.id}">+ Site</button>
       </div>
     </div>`;
 
@@ -857,6 +900,17 @@ function buildPortfolioCard(photo) {
   div.querySelector('.animate-btn').addEventListener('click', () => {
     photo.videoUrl ? unAnimatePhoto(photo) : animatePhoto(photo);
   });
+  div.querySelector('.add-to-site-btn').addEventListener('click', () => addToSite(photo));
+
+  div.querySelector('.meta-location-input').addEventListener('input', e => {
+    photo.location = e.target.value;
+    updateMetaOverlay(div, photo);
+  });
+  div.querySelector('.meta-date-input').addEventListener('input', e => {
+    photo.date = e.target.value;
+    updateMetaOverlay(div, photo);
+  });
+
   return div;
 }
 
@@ -947,5 +1001,18 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('removed-nav-btn')    .addEventListener('click', showRemovedView);
   document.getElementById('back-to-roll-btn')   .addEventListener('click', showRollView);
   document.getElementById('clear-all-removed-btn').addEventListener('click', clearAllRemoved);
+
+  // Snippet modal
+  document.getElementById('copy-snippet-btn').addEventListener('click', () => {
+    const text = document.getElementById('snippet-code').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-snippet-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy HTML'; }, 2000);
+    });
+  });
+  document.getElementById('close-snippet-btn').addEventListener('click', () => {
+    document.getElementById('snippet-modal').classList.add('hidden');
+  });
 
 });
