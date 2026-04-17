@@ -1139,7 +1139,7 @@ function buildSitePreviewHTML(allEntries, newPhotoMap) {
     const imgSrc  = isNew ? filmPhoto.dataUrl : `${SITE}/pics/${encodeURIComponent(p.filename)}`;
     const videoSrc = isNew
       ? (filmPhoto.videoUrl || null)
-      : (p.video ? `${SITE}/pics/${encodeURIComponent(p.video)}` : null);
+      : (p.video ? `${SITE}/videos/${encodeURIComponent(p.video)}` : null);
 
     const month  = p.month ? MO[parseInt(p.month, 10) - 1] : '';
     const date   = [month, p.year].filter(Boolean).join(' ');
