@@ -3,18 +3,7 @@
 // SHA-256 of "darkroom" — change by running: echo -n "yourpassword" | shasum -a 256
 const PASSWORD_HASH = 'c6a31148a73f1db678218c65c55b395d76aa11d6b6c6407634f0399963b1af5e';
 
-const TEST_ROLL_URLS = [
-  'https://picsum.photos/id/10/1200/800',
-  'https://picsum.photos/id/15/1200/800',
-  'https://picsum.photos/id/20/1200/800',
-  'https://picsum.photos/id/25/1200/800',
-  'https://picsum.photos/id/37/1200/800',
-  'https://picsum.photos/id/50/1200/800',
-  'https://picsum.photos/id/67/1200/800',
-  'https://picsum.photos/id/100/1200/800',
-  'https://picsum.photos/id/200/1200/800',
-  'https://picsum.photos/id/300/1200/800',
-];
+const TEST_ROLL_MANIFEST = './test-roll/manifest.json';
 
 const SESSION_KEY         = 'filmlab_auth';
 const MODEL               = 'claude-sonnet-4-6';
@@ -239,22 +228,36 @@ async function loadTestRoll() {
   btn.textContent = 'Loading…';
 
   try {
-    for (let i = 0; i < TEST_ROLL_URLS.length; i++) {
-      const resp  = await fetch(TEST_ROLL_URLS[i]);
-      const blob  = await resp.blob();
-      const file  = new File([blob], `test-${String(i + 1).padStart(2, '0')}.jpg`, { type: 'image/jpeg' });
-      const dataUrl = await readFileAsDataUrl(file);
-      const photo = { id: uid(), file, dataUrl, status: 'pending', analysis: null };
-      photos.push(photo);
-      document.getElementById('photos-grid').appendChild(buildCard(photo));
+    const filenames = await fetch(TEST_ROLL_MANIFEST).then(r => r.json());
+
+    if (!filenames.length) {
+      btn.textContent = 'No test photos yet';
+      setTimeout(() => { btn.disabled = false; btn.textContent = 'load test roll'; }, 2000);
+      return;
     }
+
+    for (const name of filenames) {
+      try {
+        const resp    = await fetch(`./test-roll/${name}`);
+        if (!resp.ok) continue;
+        const blob    = await resp.blob();
+        const file    = new File([blob], name, { type: blob.type || 'image/jpeg' });
+        const dataUrl = await readFileAsDataUrl(file);
+        const photo   = { id: uid(), file, dataUrl, status: 'pending', analysis: null };
+        photos.push(photo);
+        document.getElementById('photos-grid').appendChild(buildCard(photo));
+      } catch (e) {
+        console.warn('Could not load test photo:', name);
+      }
+    }
+
     updateCount();
-    document.getElementById('photos-section').classList.remove('hidden');
+    if (photos.length) document.getElementById('photos-section').classList.remove('hidden');
   } catch (e) {
     console.error('Failed to load test roll:', e);
   } finally {
     btn.disabled = false;
-    btn.textContent = 'load a test roll';
+    btn.textContent = 'load test roll';
   }
 }
 
@@ -798,13 +801,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput   = document.getElementById('file-input');
   const folderInput = document.getElementById('folder-input');
 
-  document.getElementById('test-roll-btn').addEventListener('click', e => {
-    e.stopPropagation();
-    loadTestRoll();
-  });
+  document.getElementById('test-roll-btn').addEventListener('click', loadTestRoll);
 
   dropZone.addEventListener('click', e => {
-    if (e.target.closest('label') || e.target.closest('#test-roll-btn') || e.target === fileInput || e.target === folderInput) return;
+    if (e.target.closest('label') || e.target === fileInput || e.target === folderInput) return;
     fileInput.click();
   });
   dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
