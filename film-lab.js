@@ -1128,7 +1128,7 @@ function updateSiteSelectionBtn() {
 // allEntries  : combined existing + new entries (full portfolio-photos.json shape)
 // newPhotoMap : Map<filename, filmLabPhoto> for new photos (provides dataUrl + videoUrl)
 function buildSitePreviewHTML(allEntries, newPhotoMap) {
-  const SITE = 'https://ndellamaria.github.io';
+  const SITE = window.location.origin;
   const MO   = ['January','February','March','April','May','June','July',
                  'August','September','October','November','December'];
 
@@ -1211,7 +1211,7 @@ async function addSelectedToSite() {
 
   let currentPhotos = [];
   try {
-    currentPhotos = await fetch('https://ndellamaria.github.io/portfolio-photos.json', { cache: 'no-store' }).then(r => r.json());
+    currentPhotos = await fetch('./portfolio-photos.json', { cache: 'no-store' }).then(r => r.json());
   } catch (e) { console.warn('Could not fetch live portfolio JSON:', e.message); }
 
   // Build entries and a filename → photo map for the preview
