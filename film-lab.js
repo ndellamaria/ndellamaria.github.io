@@ -110,7 +110,7 @@ const logout      = () => { sessionStorage.clear(); location.reload(); };
 
 // ── SYSTEM PROMPT ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are Margot, a film photography instructor. Terse, direct, no flattery.
+const SYSTEM_PROMPT = `You are a film photography instructor. Terse, direct, no flattery.
 
 For each photo give brief technical notes only — one phrase per category, plainly stated. No praise, no hedging, no rating.
 
@@ -165,7 +165,7 @@ async function analyzePhotoWithClaude(dataUrl, classification = null) {
   const data  = await res.json();
   const raw   = data.content[0].text;
   const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Could not parse response from Margot.');
+  if (!match) throw new Error('Could not parse response from instructor.');
   return JSON.parse(match[0]);
 }
 
@@ -338,7 +338,7 @@ function setCardAnalyzing(photo) {
     body.innerHTML = /* html */`
       <div class="card-loading">
         <div class="spinner"></div>
-        <span>Margot is reviewing…</span>
+        <span>Reviewing…</span>
       </div>`;
   }
 }
@@ -487,7 +487,7 @@ async function developRoll() {
     }
   }
 
-  // ── Phase 2: Margot reviews remaining photos ──
+  // ── Phase 2: Review remaining photos ──
   const toAnalyze = photos.filter(p => p.status === 'analyzing');
 
   if (!toAnalyze.length) {
