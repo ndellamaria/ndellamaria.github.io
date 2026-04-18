@@ -5,6 +5,9 @@ const PASSWORD_HASH = 'c6a31148a73f1db678218c65c55b395d76aa11d6b6c6407634f039996
 
 const TEST_ROLL_MANIFEST = './test-roll/manifest.json';
 
+// Set to false to hide all "Add to Site" publishing controls (e.g. when sharing with others)
+const PUBLISH_ENABLED = true;
+
 const SESSION_KEY         = 'filmlab_auth';
 const MODEL               = 'claude-sonnet-4-6';
 const CLASSIFIER_URL      = 'https://analog-image-classifier.onrender.com';
@@ -460,6 +463,7 @@ function buildPortfolioHTML(picks) {
     <div class="pf-item">
       <div class="pf-img-wrap">
         <img src="${p.dataUrl}" alt="${escapeHtml(p.analysis?.title || p.file.name)}" loading="lazy">
+        ${p.videoDataUrl ? `<video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"><source src="${p.videoDataUrl}" type="video/mp4"></video>` : ''}
       </div>
       <div class="pf-meta">
         <span class="pf-title">${escapeHtml(p.analysis?.title || p.file.name)}</span>
@@ -486,7 +490,7 @@ function buildPortfolioHTML(picks) {
     @media (max-width: 900px) { .pf-grid { columns: 2; } }
     @media (max-width: 560px) { .pf-grid { columns: 1; } }
     .pf-item { break-inside: avoid; margin-bottom: 1.75rem; }
-    .pf-img-wrap { border-radius: 6px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.12); background: #000; }
+    .pf-img-wrap { position: relative; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.12); background: #000; }
     .pf-img-wrap img { width: 100%; height: auto; display: block; }
     .pf-meta { padding: 0.5rem 0.25rem 0; }
     .pf-title { font-size: 11pt; color: #555; font-style: italic; }
@@ -1087,6 +1091,7 @@ const MONTHS = ['January','February','March','April','May','June','July',
 
 
 function updateSiteSelectionBtn() {
+  if (!PUBLISH_ENABLED) return;
   const n   = photos.filter(p => p.inPortfolio && p.selectedForSite).length;
   const btn = document.getElementById('add-to-site-multi-btn');
   if (!btn) return;
@@ -1275,7 +1280,7 @@ function buildPortfolioCard(photo) {
       <div class="card-actions">
         <button class="portfolio-toggle in-portfolio" data-id="${photo.id}">★ Remove</button>
         <button class="animate-btn${photo.videoUrl ? ' animated' : ''}" ${photo.animating ? 'disabled' : ''} data-id="${photo.id}">${animBtnText}</button>
-        <button class="add-to-site-btn${photo.selectedForSite ? ' selected' : ''}" data-id="${photo.id}">${photo.selectedForSite ? '✓ Site' : '+ Site'}</button>
+        ${PUBLISH_ENABLED ? `<button class="add-to-site-btn${photo.selectedForSite ? ' selected' : ''}" data-id="${photo.id}">${photo.selectedForSite ? '✓ Site' : '+ Site'}</button>` : ''}
       </div>
     </div>`;
 
@@ -1300,9 +1305,9 @@ function buildPortfolioCard(photo) {
   div.querySelector('.animate-btn').addEventListener('click', () => {
     photo.videoUrl ? unAnimatePhoto(photo) : animatePhoto(photo);
   });
-  div.querySelector('.add-to-site-btn').addEventListener('click', () => {
+  const siteBtn = div.querySelector('.add-to-site-btn');
+  if (siteBtn) siteBtn.addEventListener('click', () => {
     photo.selectedForSite = !photo.selectedForSite;
-    const siteBtn = div.querySelector('.add-to-site-btn');
     siteBtn.textContent = photo.selectedForSite ? '✓ Site' : '+ Site';
     siteBtn.classList.toggle('selected', photo.selectedForSite);
     updateSiteSelectionBtn();
@@ -1321,7 +1326,24 @@ async function exportPortfolio() {
 
   try {
     const sized = await Promise.all(
-      picks.map(async p => ({ ...p, dataUrl: await resizeDataUrl(p.dataUrl, 1200) }))
+      picks.map(async p => {
+        const dataUrl = await resizeDataUrl(p.dataUrl, 1200);
+        let videoDataUrl = null;
+        if (p.videoUrl) {
+          try {
+            const res = await fetch(p.videoUrl);
+            if (res.ok) {
+              const blob = await res.blob();
+              videoDataUrl = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.readAsDataURL(blob);
+              });
+            }
+          } catch { /* skip video if fetch fails */ }
+        }
+        return { ...p, dataUrl, videoDataUrl };
+      })
     );
     portfolioHTML = buildPortfolioHTML(sized);
 
