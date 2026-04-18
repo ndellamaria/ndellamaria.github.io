@@ -8,14 +8,14 @@ Built as the final project for *Navigating Your Worth* (NYU, Spring 2026).
 
 ## What It Does
 
-Upload a roll of scanned film photographs. Film Lab runs each frame through a four-stage pipeline:
+Upload a roll of scanned film photographs. Film Lab runs each frame through a five-stage pipeline:
 
 ```
 Raw scans
     │
     ▼
 [1] ONNX Classifier (ResNet50)
-    Categorizes: good · blurry · over-exposed · under-exposed · light leak
+    Custom-trained 5-class model: good · blurry · over-exposed · under-exposed · light leak
     Removes frames below 0.65 confidence threshold
     │
     ▼
@@ -26,51 +26,52 @@ Raw scans
     ▼
 [3] Judge LLM (claude-sonnet-4-6, separate system prompt)
     Scores each analysis against evaluation-criteria.json on 3 criteria
-    Returns scores, flags, and actionable agent improvement suggestions
+    Runs silently in background — results available via ↓ Evaluation Report
     │
     ▼
 [4] Portfolio Curation
-    User selects portfolio picks · adds location + month/year metadata
+    User selects portfolio picks
     Eligible frames animated with Runway ML (gen3a_turbo) — seamless loop
+    Export as self-contained HTML (images + videos embedded as base64)
     │
     ▼
 [5] Publish to Site
-    Select one or more portfolio picks · preview full site with new photos
-    and videos rendered · open a single GitHub PR that uploads images,
-    videos, and updates portfolio-photos.json
+    Select one or more portfolio picks · preview full site with photos and
+    videos · backend fetches videos from Runway and uploads all assets ·
+    opens a single GitHub PR updating portfolio-photos.json
 ```
 
 ---
 
 ## Architecture
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Vanilla JS, HTML, CSS — static, no build step |
-| Classifier | ONNX Runtime (ResNet50, 5-class custom-trained model) |
-| Instructor LLM | Anthropic Claude claude-sonnet-4-6 via server-side proxy |
-| Judge LLM | Anthropic Claude claude-sonnet-4-6, separate system prompt |
-| Animation | Runway ML gen3a_turbo image-to-video |
-| Backend | Flask (Python), hosted on Render |
-| Portfolio site | GitHub Pages, `ndellamaria.github.io` |
-| Portfolio data | `portfolio-photos.json` — single source of truth |
+| Layer          | Technology                                                                      |
+| -------------- | ------------------------------------------------------------------------------- |
+| Frontend       | Vanilla JS, HTML, CSS — static, no build step                                   |
+| Classifier     | ONNX Runtime (ResNet50, [custom-trained 5-class model](https://github.com/ndellamaria/analog-image-classifier)) |
+| Instructor LLM | Anthropic Claude claude-sonnet-4-6 via server-side proxy                        |
+| Judge LLM      | Anthropic Claude claude-sonnet-4-6, separate system prompt                      |
+| Animation      | Runway ML gen3a_turbo image-to-video                                            |
+| Backend        | Flask (Python), hosted on Render                                                |
+| Portfolio site | GitHub Pages, `ndellamaria.github.io`                                           |
+| Portfolio data | `portfolio-photos.json` — single source of truth                                |
 
 ---
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `film-lab.html` | App shell — login screen, roll view, portfolio section, site preview modal |
-| `film-lab.js` | All app logic — classification, analysis, animation, publishing |
-| `film-lab.css` | Dark-theme UI styles |
-| `evaluation-criteria.json` | Judge LLM rubric — edit to change how quality is measured |
-| `portfolio-photos.json` | Live portfolio manifest — all photos rendered from this |
-| `scripts.js` | Renders portfolio on the main site from `portfolio-photos.json` |
-| `index.html` | Main personal site |
-| `test-roll/manifest.json` | List of test photos for demo runs |
+| File                       | Purpose                                                                    |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `film-lab.html`            | App shell — login screen, roll view, portfolio section, site preview modal |
+| `film-lab.js`              | All app logic — classification, analysis, animation, publishing            |
+| `film-lab.css`             | Dark-theme UI styles                                                       |
+| `evaluation-criteria.json` | Judge LLM rubric — edit to change how quality is measured                  |
+| `portfolio-photos.json`    | Live portfolio manifest — all photos rendered from this                    |
+| `scripts.js`               | Renders portfolio on the main site from `portfolio-photos.json`            |
+| `index.html`               | Main personal site                                                         |
+| `test-roll/manifest.json`  | List of test photos for demo runs                                          |
 
-Backend lives in a separate repo: `analog-image-classifier/app.py`
+Backend lives in a separate repo: [ndellamaria/analog-image-classifier](https://github.com/ndellamaria/analog-image-classifier)
 
 ---
 
@@ -84,21 +85,25 @@ echo -n "yournewpassword" | shasum -a 256
 
 Replace `PASSWORD_HASH` at the top of `film-lab.js` with the result.
 
+### Publish gate
+
+Publishing to GitHub can be disabled without changing the password — set `PUBLISH_ENABLED = false` at the top of `film-lab.js`. This hides all `+ Site` controls, preventing anyone from opening a PR. Set it back to `true` to re-enable.
+
 ---
 
 ## Environment Variables (Render backend)
 
-| Variable | Required for |
-|----------|-------------|
-| `ANTHROPIC_API_KEY` | Instructor LLM + Judge LLM |
-| `RUNWAY_API_KEY` | Photo animation |
-| `GITHUB_TOKEN` | Automated PR — needs `contents:write` + `pull_requests:write` |
+| Variable            | Required for                                                  |
+| ------------------- | ------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY` | Instructor LLM + Judge LLM                                    |
+| `RUNWAY_API_KEY`    | Photo animation                                               |
+| `GITHUB_TOKEN`      | Automated PR — needs `contents:write` + `pull_requests:write` |
 
 ---
 
 ## Evaluation
 
-Film Lab includes a self-evaluation system. After each roll is developed, a Judge LLM scores every analysis output against a rubric defined in `evaluation-criteria.json`. Click **↓ Evaluation Report** in the roll section to download a full markdown report with:
+Film Lab includes a self-evaluation system. After each roll is developed, a Judge LLM scores every analysis output against a rubric defined in `evaluation-criteria.json`. The judge runs silently in the background — click **↓ Evaluation Report** in the roll section to download a full markdown report with:
 
 - Per-criterion averages across the roll
 - Areas for improvement with actionable agent suggestions
@@ -110,11 +115,11 @@ See [EVALUATION.md](./EVALUATION.md) for full documentation.
 
 ## Publish to Site
 
-From any portfolio card, toggle **+ Site** to select photos for publishing. A blue **Add N to Site →** button appears in the portfolio section header. Clicking it:
+From any portfolio card, toggle **+ Site** to select photos for publishing. An **Add N to Site →** button appears in the portfolio section header. Clicking it:
 
 1. Fetches the live `portfolio-photos.json`
-2. Renders a full site preview in a modal — all existing photos plus new ones highlighted in blue, videos playing
-3. On **Open PR**: fetches Runway video files, uploads all images and videos to `pics/`, updates the JSON manifest, and opens a single GitHub PR
+2. Renders a full site preview in a modal — all existing photos and videos playing
+3. On **Open PR**: backend fetches Runway video URLs directly, uploads images to `pics/` and videos to `videos/`, updates the JSON manifest, and opens a single GitHub PR
 
 ---
 
